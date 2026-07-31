@@ -1,0 +1,2851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阴间规划局 · 职场版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+body{overflow:hidden;background:#f5f0eb;font-family:'STKaiti','KaiTi','STSong','SimSun',serif;color:#333}
+#game-container{width:100vw;height:100vh;position:relative}
+
+/* ===== Loading ===== */
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f5f0eb;z-index:1000;transition:opacity .8s;animation:autoHideLoading 3s ease-out forwards}@keyframes autoHideLoading{0%,85%{opacity:1;pointer-events:auto}100%{opacity:0;pointer-events:none}}
+#loading.hidden{opacity:0;pointer-events:none}
+#loading .title{font-size:5vw;color:#c45555;letter-spacing:.4em;text-shadow:0 0 20px rgba(196,85,85,.3);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+#loading .bar-wrap{width:25vw;height:4px;background:#ddd;border-radius:2px;overflow:hidden;margin-top:2vh;border:1px solid rgba(196,85,85,.2)}
+#loading .bar{height:100%;width:0;background:linear-gradient(90deg,#c45555,#e08080,#c45555);border-radius:2px;animation:loadBar 2s ease-out forwards}@keyframes loadBar{0%{width:0}50%{width:70%}100%{width:100%}}
+
+/* ===== Start Screen ===== */
+#start-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(245,240,235,.98);z-index:100;transition:opacity .8s}
+#start-screen.hidden{opacity:0;pointer-events:none}
+#start-screen h1{font-size:6vw;color:#c45555;letter-spacing:.3em;margin-bottom:1vh;font-weight:400;text-shadow:0 0 20px rgba(196,85,85,.2);animation:pulse 2.5s ease-in-out infinite}
+#start-screen .sub{font-size:1.5vw;color:#888;letter-spacing:.2em;margin-bottom:1.5vh}
+#start-screen .host{font-size:1.2vw;color:#666;max-width:38vw;text-align:center;line-height:1.8;margin-bottom:2vh}
+#start-screen .host b{color:#c45555}
+#start-btn{padding:1.2vh 3vw;font-size:1.9vw;font-family:inherit;letter-spacing:.2em;background:#fff;color:#c45555;border:1px solid rgba(196,85,85,.3);cursor:pointer;transition:all .3s;border-radius:2px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+#start-btn:hover{background:#fff0f0;border-color:#c45555;box-shadow:0 4px 15px rgba(196,85,85,.15)}
+
+/* ===== End Screen ===== */
+#end-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(245,240,235,.98);z-index:100;transition:opacity .8s;opacity:0;pointer-events:none}
+#end-screen.visible{opacity:1;pointer-events:auto}
+#end-screen h1{font-size:4vw;color:#c45555;letter-spacing:.3em;margin-bottom:1.5vh}
+#end-screen .stats{display:flex;gap:2.5vw;margin-bottom:1.5vh}
+#end-screen .stat-item{text-align:center}
+#end-screen .stat-item .num{font-size:4vw;color:#d4a017}
+#end-screen .stat-item .label{font-size:1.2vw;color:#888;margin-top:.4vh}
+#end-screen .rank{font-size:1.9vw;color:#c45555;margin-bottom:1.5vh}
+#end-screen .review{font-size:1.2vw;color:#666;line-height:1.8;max-width:40vw;text-align:center;margin-bottom:2vh}
+#restart-btn{padding:1.2vh 3vw;font-size:1.9vw;font-family:inherit;letter-spacing:.2em;background:#fff;color:#c45555;border:1px solid rgba(196,85,85,.3);cursor:pointer;transition:all .3s;border-radius:2px}
+#restart-btn:hover{background:#fff0f0}
+
+/* ===== Top Bar (shared) ===== */
+#top-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:1vh 2vw;background:linear-gradient(180deg,rgba(255,255,255,.95) 0%,rgba(255,255,255,.7) 100%);border-bottom:1px solid rgba(0,0,0,.1);box-shadow:0 1px 10px rgba(0,0,0,.05);z-index:20}
+#day-display{font-size:2vw;color:#c45555}
+#score-display{font-size:2vw;color:#d4a017}
+#score-display span{font-size:1.2vw;color:#888;margin-right:.3vw}
+#title-tag{font-size:1.1vw;padding:.2vh .6vw;border:1px solid rgba(196,85,85,.3);border-radius:2px;color:#c45555;letter-spacing:.1em}
+
+/* ===== Lobby UI ===== */
+#lobby-ui{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#lobby-ui.active{display:block}
+#lobby-ui>*{pointer-events:auto}
+#lobby-panel{position:absolute;bottom:0;left:0;right:0;padding:1.5vh 2vw;background:linear-gradient(0deg,rgba(255,255,255,.95) 70%,transparent 100%);border-top:1px solid rgba(0,0,0,.08)}
+.lobby-btn{padding:.8vh 1.5vw;font-size:1.5vw;font-family:inherit;background:#fff;border:1px solid rgba(0,0,0,.15);color:#555;border-radius:3px;cursor:pointer;transition:all .3s;margin-right:.5vw;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.lobby-btn:hover{background:#f5f0eb;border-color:#c45555;color:#333}
+.lobby-btn.primary{border-color:#c45555;color:#c45555;background:#fff0f0}
+.lobby-btn.primary:hover{background:#ffe0e0}
+
+#lobby-info{position:absolute;top:10vh;right:2vw;width:18vw;background:rgba(255,255,255,.95);border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:1vw;box-shadow:0 2px 15px rgba(0,0,0,.08)}
+#lobby-info h4{color:#c45555;font-size:1.5vw;margin-bottom:.5vh;border-bottom:1px solid rgba(0,0,0,.1);padding-bottom:.3vh}
+#lobby-info .info-item{font-size:1.2vw;color:#888;margin:.3vh 0;padding:.2vh 0}
+#lobby-info .info-item b{color:#333}
+
+/* ===== Trial UI - NEW LAYOUT ===== */
+#trial-ui{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#trial-ui.active{display:block}
+#trial-ui>*{pointer-events:auto}
+
+/* 左上角问话面板（简历下方） */
+#trial-questions{position:absolute;top:22vh;left:2vw;width:14vw;background:rgba(255,255,255,.95);border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:1vw;box-shadow:0 4px 20px rgba(0,0,0,.1);opacity:0;transition:opacity .5s;pointer-events:none}
+#trial-questions.show{opacity:1;pointer-events:auto}
+#trial-questions h4{color:#c45555;font-size:1.3vw;margin-bottom:.8vh;border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:.3vh}
+#trial-questions .q-btn{display:block;width:100%;padding:.6vh .8vw;margin:.3vh 0;font-size:1.2vw;font-family:inherit;background:#fff;border:1px solid rgba(0,0,0,.1);color:#555;border-radius:3px;cursor:pointer;transition:all .2s;text-align:left}
+#trial-questions .q-btn:hover{background:#f5f0eb;border-color:#c45555;color:#333}
+#trial-questions .q-btn.judge{background:#fff0f0;border-color:#c45555;color:#c45555}
+#trial-questions .q-btn.judge:hover{background:#ffe0e0}
+#trial-questions .q-btn.harsh{border-color:rgba(200,100,50,.3);color:#a55}
+#trial-questions .q-btn.harsh:hover{background:#fff5f0}
+#trial-questions .q-btn:disabled{opacity:.3;cursor:default}
+#trial-questions .q-btn.voice-btn{border-color:rgba(80,120,200,.3);color:#557}
+#trial-questions .q-btn.voice-btn.active{background:rgba(80,120,200,.08);border-color:#448;color:#448}
+#trial-questions .q-btn.love-btn{border-color:#e08080;color:#c45555}
+#trial-questions .q-btn.love-btn:hover{background:#fff0f0}
+
+/* 底部回答面板 */
+#trial-answer{position:absolute;bottom:2vh;left:50%;transform:translateX(-50%);width:50vw;background:rgba(255,255,255,.97);border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:1.2vh 1.5vw;box-shadow:0 4px 25px rgba(0,0,0,.12);opacity:0;transition:opacity .5s;pointer-events:none;text-align:center}
+#trial-answer.show{opacity:1;pointer-events:auto}
+#trial-answer .answer-text{font-size:1.6vw;color:#333;line-height:1.6;font-family:'STKaiti','KaiTi','STSong','SimSun',serif}
+#trial-answer .answer-speaker{font-size:1.1vw;color:#c45555;margin-top:.5vh}
+
+/* 技能栏 */
+#skill-bar{position:absolute;top:8vh;right:2vw;display:flex;flex-direction:column;gap:.4vw;padding:.5vw .8vw;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.1);border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.08);opacity:0;transition:opacity .5s;pointer-events:none}
+#skill-bar.show{opacity:1;pointer-events:auto}
+.skill-item{display:flex;align-items:center;gap:.3vw;padding:.4vh .6vw;border:1px solid rgba(0,0,0,.1);border-radius:3px;font-size:1.1vw;color:#888;transition:all .3s;cursor:pointer;background:#fff}
+.skill-item.active{border-color:#c45555;color:#c45555;background:#fff0f0;box-shadow:0 0 8px rgba(196,85,85,.1)}
+.skill-item .key{color:#aaa;margin-right:.2vw;font-weight:bold}
+.skill-item .count{color:#aaa;margin-left:.3vw}
+.skill-item.used{opacity:.3}
+
+/* 灵魂信息（左上角） */
+#trial-soul-info{position:absolute;top:8vh;left:2vw;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:.8vw 1vw;box-shadow:0 2px 10px rgba(0,0,0,.08);opacity:0;transition:opacity .5s;pointer-events:none}
+#trial-soul-info.show{opacity:1}
+#trial-soul-info .s-name{font-size:1.8vw;color:#333;font-weight:bold}
+#trial-soul-info .s-age{font-size:1.2vw;color:#888;margin-left:.3vw}
+#trial-soul-info .s-title{font-size:1.2vw;color:#c45555}
+#trial-soul-info .s-mood{font-size:1vw;color:#888;margin-top:.2vh}
+
+/* 进度 */
+#trial-progress{position:absolute;top:1.5vh;left:50%;transform:translateX(-50%);font-size:1.3vw;color:#888}
+#trial-progress b{color:#c45555}
+
+/* ===== Office UI ===== */
+#office-ui{position:fixed;inset:0;pointer-events:none;z-index:10;display:none}
+#office-ui.active{display:block}
+#office-ui>*{pointer-events:auto}
+#office-panel{position:absolute;bottom:0;left:0;right:0;padding:1.5vh 2vw;background:linear-gradient(0deg,rgba(255,255,255,.95) 70%,transparent 100%);border-top:1px solid rgba(0,0,0,.08)}
+
+/* ===== Feedback ===== */
+#feedback{position:fixed;top:15%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20;text-align:center}
+#feedback .main{font-size:4vw;font-weight:700;opacity:0;transition:all .6s}
+#feedback .sub{font-size:1.5vw;color:#888;opacity:0;transition:all .6s .2s}
+#feedback.show .main{opacity:1;transform:translateY(-1vh)}
+#feedback.show .sub{opacity:1}
+#feedback .main.happy{color:#d4a017;text-shadow:0 0 20px rgba(212,160,23,.3)}
+#feedback .main.sad{color:#c45555;text-shadow:0 0 20px rgba(196,85,85,.2)}
+
+/* ===== Modal ===== */
+.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.9);width:35vw;max-height:70vh;background:rgba(255,255,255,.98);border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:1.5vw;z-index:50;opacity:0;pointer-events:none;transition:all .3s;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.15)}
+.modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal h3{color:#c45555;font-size:1.8vw;margin-bottom:1vh;text-align:center;border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:.5vh}
+.modal .close-btn{position:absolute;top:.5vw;right:.5vw;background:none;border:none;color:#c45555;font-size:1.5vw;cursor:pointer}
+.modal .content{font-size:1.2vw;color:#555;line-height:1.7}
+.modal .content b{color:#333}
+.modal .content .section{margin:.8vh 0;padding:.5vh 0;border-bottom:1px solid rgba(0,0,0,.06)}
+
+/* ===== Help Event ===== */
+#help-snap{width:100%;max-height:32vh;object-fit:cover;border-radius:4px;display:block;margin:.6vh auto}
+#help-ask{font-size:1.4vw;color:#333;line-height:1.7;text-align:center;margin:.8vh 0;font-family:'STKaiti','KaiTi','STSong','SimSun',serif}
+#help-soul{text-align:center;color:#c45555;font-size:1.1vw;margin-top:.3vh}
+.help-cost{color:#d4a017;font-weight:bold}
+.help-btn-row{display:flex;justify-content:center;gap:.8vw;margin-top:1vh}
+.help-reward{color:#d4a017;font-weight:bold}
+.help-photo{width:100%;max-height:30vh;object-fit:cover;border-radius:4px;display:block;margin:.6vh auto}
+.help-photo-cap{text-align:center;color:#888;font-size:.9vw;margin-top:.3vh}
+
+/* ===== Bubbles ===== */
+.soul-bubble{background:rgba(255,255,255,.95);border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:.5vw .9vw;max-width:16vw;min-width:6vw;text-align:center;pointer-events:none;box-shadow:0 2px 15px rgba(0,0,0,.1)}
+.soul-bubble .sb-text{font-size:1.2vw;line-height:1.5;color:#333;white-space:normal;word-break:break-word;font-family:'STKaiti','KaiTi','STSong','SimSun',serif}
+.soul-bubble .sb-speaker{font-size:.9vw;color:#c45555;margin-top:.2vh}
+.soul-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid rgba(255,255,255,.95)}
+
+.whisper-bubble{background:rgba(255,255,255,.9);border:1px solid rgba(150,150,200,.2);border-radius:8px;padding:.3vw .6vw;max-width:10vw;text-align:center;pointer-events:none;opacity:.85;box-shadow:0 1px 8px rgba(0,0,0,.08)}
+.whisper-bubble .wb-text{font-size:1vw;line-height:1.4;color:#666;white-space:normal;word-break:break-word;font-style:italic}
+.whisper-bubble::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid rgba(255,255,255,.9)}
+
+.love-bubble{background:rgba(255,240,245,.95);border:1px solid rgba(255,150,180,.3);border-radius:10px;padding:.4vw .8vw;max-width:12vw;text-align:center;pointer-events:none;animation:lovePulse 1.5s ease-in-out infinite;box-shadow:0 2px 12px rgba(255,150,180,.15)}
+@keyframes lovePulse{0%,100%{box-shadow:0 0 8px rgba(255,150,180,.1)}50%{box-shadow:0 0 16px rgba(255,150,180,.2)}}
+.love-bubble .lb-text{font-size:1.2vw;line-height:1.4;color:#c45555;white-space:normal}
+.love-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid rgba(255,240,245,.95)}
+
+.sign-label{background:rgba(255,250,235,.95);border:1px solid rgba(212,160,23,.3);border-radius:4px;padding:.3vw .6vw;max-width:10vw;text-align:center;pointer-events:none;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+.sign-label .sl-text{font-size:1.1vw;color:#b8860b;line-height:1.3}
+.sign-label .sl-sub{font-size:.9vw;color:#888;margin-top:.1vh}
+
+/* Trial-only labels - hidden by default */
+.trial-label{display:none;pointer-events:none}
+
+/* ===== Other ===== */
+.coin-fly{position:fixed;pointer-events:none;z-index:15;font-size:2vw;opacity:0;animation:coinUp 1s forwards}
+@keyframes coinUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-20vh) scale(1.5)}}
+
+#mood-indicator{position:fixed;top:8vh;left:50%;transform:translateX(-50%);font-size:1.5vw;color:#c45555;opacity:0;transition:opacity .3s;z-index:15}
+#mood-indicator.show{opacity:1}
+
+#combo-display{position:fixed;top:15vh;right:3vw;font-size:1.5vw;color:#d4a017;opacity:0;transition:opacity .3s;z-index:15;text-align:right}
+#combo-display.show{opacity:1}
+#combo-display .combo-num{font-size:3vw;font-weight:bold}
+#combo-display .combo-text{font-size:1.2vw;color:#888}
+
+/* Crosshair */
+#crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;pointer-events:none;z-index:5}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.9);box-shadow:0 0 2px rgba(0,0,0,.6)}
+#crosshair::before{left:50%;top:0;width:2px;height:100%;transform:translateX(-50%)}
+#crosshair::after{top:50%;left:0;height:2px;width:100%;transform:translateY(-50%)}
+#crosshair .ch-dot{position:absolute;left:50%;top:50%;width:4px;height:4px;background:#fff;border-radius:50%;transform:translate(-50%,-50%)}
+</style>
+<base target="_blank">
+<!-- Three.js 全局加载，支持双击打开 -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+// 内联 CSS2DRenderer（避免模块导入问题）
+class CSS2DObject extends THREE.Object3D {
+    constructor(element = document.createElement('div')) {
+        super();
+        this.element = element;
+        this.element.style.position = 'absolute';
+        this.element.style.userSelect = 'none';
+        this.element.setAttribute('draggable', false);
+        this.addEventListener('removed', function () {
+            this.traverse(function (object) {
+                if (object.element && object.element.parentNode) {
+                    object.element.parentNode.removeChild(object.element);
+                }
+            });
+        });
+    }
+    copy(source, recursive) {
+        super.copy(source, recursive);
+        this.element = source.element.cloneNode(true);
+        return this;
+    }
+}
+class CSS2DRenderer {
+    constructor() {
+        this._width = 0; this._height = 0;
+        this._widthHalf = 0; this._heightHalf = 0;
+        this._vector = new THREE.Vector3();
+        this._viewMatrix = new THREE.Matrix4();
+        this._viewProjectionMatrix = new THREE.Matrix4();
+        this.domElement = document.createElement('div');
+        this.domElement.style.overflow = 'hidden';
+        this.domElement.style.position = 'absolute';
+        this.domElement.style.top = '0';
+        this.domElement.style.left = '0';
+        this.domElement.style.pointerEvents = 'none';
+    }
+    getSize() { return { width: this._width, height: this._height }; }
+    setSize(width, height) {
+        this._width = width; this._height = height;
+        this._widthHalf = width / 2; this._heightHalf = height / 2;
+    }
+    render(scene, camera) {
+        const elements = [];
+        scene.traverse(obj => { if (obj instanceof CSS2DObject) elements.push(obj); });
+        elements.sort((a, b) => {
+            const d1 = a.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
+            const d2 = b.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position);
+            return d2 - d1;
+        });
+        elements.forEach(obj => {
+            const pos = obj.getWorldPosition(new THREE.Vector3());
+            pos.project(camera);
+            const x = (pos.x * this._widthHalf) + this._widthHalf;
+            const y = -(pos.y * this._heightHalf) + this._heightHalf;
+            obj.element.style.transform = `translate(-50%,-50%) translate(${x}px,${y}px)`;
+            if (!obj.element.parentNode) this.domElement.appendChild(obj.element);
+        });
+    }
+}
+</script>
+</head>
+<body>
+
+<div id="loading">
+  <div class="title">阴 间 规 划 局</div>
+  <div class="bar-wrap"><div class="bar" id="load-bar"></div></div>
+</div>
+
+<div id="start-screen">
+  <h1>阴 间 规 划 局</h1>
+  <div class="sub">— 死后办事处 · 职场恐怖喜剧 —</div>
+  <div class="host">
+    你是一名<b>阴间规划局判官</b>，每天的工作是审判亡灵、处理事务。<br>
+    审判时坐在<b>龙椅</b>上俯视众生，六扇轮回门在前方等候。<br>
+    大厅和办公室可以自由走动，按 <b>WASD</b> 移动，鼠标控制视角。<br>
+    审判时其他亡灵会在<b>旁听席窃窃私语</b>，看上你的可以<b>礼貌求相亲</b>。<br>
+    按 <b>E</b> 切换法器 · 点击灵魂使用 · <b>K</b> 看因果簿
+  </div>
+  <button id="start-btn">开 始 上 班</button>
+</div>
+
+<div id="end-screen">
+  <h1>今 日 收 工</h1>
+  <div class="rank" id="final-rank"></div>
+  <div class="stats">
+    <div class="stat-item"><div class="num" id="final-score">0</div><div class="label">冥 币</div></div>
+    <div class="stat-item"><div class="num" id="final-happy">0</div><div class="label">满 意 数</div></div>
+    <div class="stat-item"><div class="num" id="final-couples">0</div><div class="label">相 亲 成 功</div></div>
+    <div class="stat-item"><div class="num" id="final-tasks">0</div><div class="label">事 务 处 理</div></div>
+  </div>
+  <div class="review" id="final-review"></div>
+  <button id="restart-btn">明 天 继 续</button>
+</div>
+
+<!-- Lobby UI -->
+<div id="lobby-ui">
+  <div id="top-bar">
+    <div id="day-display"><span>第</span><span id="day-num">1</span><span>天</span></div>
+    <div id="score-display"><span>冥币</span><span id="score-val">0</span></div>
+    <div style="display:flex;align-items:center;gap:1vw;font-size:1.2vw;color:#888">
+      <span id="title-tag"></span>
+      <span>余额：<b id="balance-val" style="color:#d4a017">0</b></span>
+    </div>
+  </div>
+  <div id="lobby-info">
+    <h4>📋 今日事务</h4>
+    <div id="lobby-tasks"></div>
+  </div>
+  <div id="lobby-panel">
+    <button class="lobby-btn primary" id="btn-trial">⚖️ 开始审判</button>
+    <button class="lobby-btn" id="btn-inspect">👁️ 视察职员</button>
+    <button class="lobby-btn" id="btn-office">📋 处理事务</button>
+    <button class="lobby-btn" id="btn-end-day">🏠 下班</button>
+  </div>
+</div>
+
+<!-- Trial UI - NEW LAYOUT -->
+<div id="trial-ui">
+  <div id="top-bar">
+    <div id="score-display"><span>冥币</span><span id="trial-score">0</span></div>
+    <div id="trial-progress"><b id="soul-num">0</b>/5 亡灵</div>
+    <div style="font-size:1.2vw;color:#888">按 E 用法器 · 鼠标点击六扇门送走</div>
+  </div>
+
+  <!-- 左上角灵魂信息 -->
+  <div id="trial-soul-info">
+    <div><span class="s-name" id="soul-name"></span><span class="s-age" id="soul-age"></span></div>
+    <div class="s-title" id="soul-title"></div>
+    <div class="s-mood" id="mood-tag"></div>
+  </div>
+
+  <!-- 左侧技能栏 -->
+  <div id="skill-bar">
+    <div class="skill-item active" data-skill="0"><span class="key">E</span>糯米<span class="count" id="c0">×3</span></div>
+    <div class="skill-item" data-skill="1"><span class="key">E</span>玉佩<span class="count" id="c1">×2</span></div>
+    <div class="skill-item" data-skill="2"><span class="key">E</span>桃木剑<span class="count" id="c2">×1</span></div>
+  </div>
+
+  <!-- 返回大厅按钮 -->
+  <div style="position:absolute;bottom:2vh;left:2vw;z-index:15">
+    <button class="lobby-btn" id="btn-leave-trial" style="pointer-events:auto;cursor:pointer">← 返回大厅</button>
+  </div>
+
+  <!-- 右上角问话面板 -->
+  <div id="trial-questions">
+    <h4>📜 问话</h4>
+    <div id="question-list"></div>
+  </div>
+
+  <!-- 底部回答面板 -->
+  <div id="trial-answer">
+    <div class="answer-text" id="answer-text"></div>
+    <div class="answer-speaker" id="answer-speaker"></div>
+  </div>
+</div>
+
+<!-- Office UI -->
+<div id="office-ui">
+  <div id="top-bar">
+    <div style="font-size:1.8vw;color:#c45555">判官办公室</div>
+    <div style="font-size:1.2vw;color:#888">点击鬼魂处理事务</div>
+  </div>
+  <div id="office-panel">
+    <button class="lobby-btn" id="btn-office-back">← 返回大厅</button>
+  </div>
+</div>
+
+<div id="feedback">
+  <div class="main" id="fb-main"></div>
+  <div class="sub" id="fb-sub"></div>
+</div>
+
+<div class="modal" id="bio-modal">
+  <button class="close-btn" onclick="closeModal('bio-modal')">✕</button>
+  <h3 id="bio-title">生平档案</h3>
+  <div class="content" id="bio-content"></div>
+</div>
+
+<div class="modal" id="task-modal">
+  <button class="close-btn" onclick="closeModal('task-modal')">✕</button>
+  <h3 id="task-title">事务处理</h3>
+  <div class="content" id="task-content"></div>
+</div>
+
+<div class="modal" id="help-modal">
+  <h3 id="help-title">🙏 鬼魂求助</h3>
+  <div class="content">
+    <div id="help-soul"></div>
+    <div id="help-ask"></div>
+    <img id="help-snap" alt="求助画面" style="display:none">
+    <div class="help-btn-row">
+      <button class="lobby-btn primary" id="help-yes-btn">💰 帮忙（<span class="help-cost" id="help-cost"></span>冥币）</button>
+      <button class="lobby-btn" id="help-no-btn">❌ 婉拒</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="help-result-modal">
+  <button class="close-btn" onclick="closeModal('help-result-modal')">✕</button>
+  <h3 id="help-result-title">📸 事件回放</h3>
+  <div class="content" id="help-result-content"></div>
+</div>
+
+<div id="crosshair"><div class="ch-dot"></div></div>
+<div id="game-container"></div>
+
+<script>
+// 全局模式 - 双击即可打开，无需本地服务器
+console.log('🚀 使用全局 Three.js 模式');
+
+const PATHS = [
+  { id:'成仙', color:0xffd700, desc:'大善人归处', icon:'✨' },
+  { id:'做人', color:0x66bb6a, desc:'平凡人再世', icon:'👤' },
+  { id:'好战', color:0xff7043, desc:'好斗者', icon:'⚔️' },
+  { id:'畜牲', color:0x8d6e63, desc:'愚痴者', icon:'🐷' },
+  { id:'饿鬼', color:0xab47bc, desc:'贪吃鬼', icon:'👻' },
+  { id:'地狱', color:0xef5350, desc:'罪大恶极', icon:'🔥' },
+];
+
+const SKILLS = [
+  { id:'糯米', icon:'🍚', desc:'撒向灵魂显露真身', maxUses:3, color:0xffeedd },
+  { id:'玉佩', icon:'🟢', desc:'照向灵魂安神定魂', maxUses:2, color:0x66dd88 },
+  { id:'桃木剑', icon:'🗡️', desc:'刺向灵魂逼出真话', maxUses:1, color:0xff4444 },
+];
+
+const MOODS = {
+  calm:{label:'平静',emoji:'😌',color:'#888'}, nervous:{label:'紧张',emoji:'😰',color:'#aa8'},
+  angry:{label:'愤怒',emoji:'😠',color:'#c45555'}, sad:{label:'悲伤',emoji:'😢',color:'#668'},
+  happy:{label:'开心',emoji:'😊',color:'#6a6'}, scared:{label:'恐惧',emoji:'😱',color:'#a44'},
+  resigned:{label:'认命',emoji:'😔',color:'#888'}, grateful:{label:'感激',emoji:'🙏',color:'#d4a017'},
+  love:{label:'心动',emoji:'💕',color:'#e08080'},
+};
+
+// ===== SOUL DATA (abbreviated for space) =====
+const SOULS = [
+  {name:'阿强',age:28,title:'毒蘑菇美食家',friend:true,voicePitch:1.3,voiceRate:1.1,death:'吃了野蘑菇产生幻觉跳进河里',correctPath:4,bio:'美食博主，性格跳脱但心地不坏',personality:'跳脱、嘴碎、热心肠、贪吃',concern:'担心老妈没人照顾',concernResult:'已托梦给你哥照顾',lines:{enter:['哟！怎么是你？！'],death:['那蘑菇红白相间可好看…'],good:['给王大爷试吃过期罐头'],bad:['嘴太馋偷过老乡的鸡'],self:['我这人就管不住嘴'],last:['想再喝一杯珍珠奶茶'],auto:['大人你倒是问呀']},skill_reveal:['被糯米撒清醒了！','玉佩照得我心虚…','桃木剑一刺想起来了！']},
+  {name:'翠花',age:43,title:'超市界博尔特',voicePitch:0.9,voiceRate:1.0,death:'超市鸡蛋打折被大妈踩踏身亡',correctPath:1,bio:'超市收银员十五年，节俭直爽',personality:'直爽、节俭、爱占便宜、热心',concern:'担心猫没人喂',concernResult:'邻居收留每天喂罐头',lines:{enter:['我死得太冤了！'],death:['凌晨三点排队…'],good:['喂过流浪猫'],bad:['摘过桂花泡茶'],self:['普通老百姓'],last:['鸡蛋被谁抢到了'],auto:['大人你听我说话了吗']},skill_reveal:['糯米一撒看清了','玉佩照得暖洋洋','哎哟这一剑！']},
+  {name:'老王',age:56,title:'民间电工(无证)',voicePitch:0.7,voiceRate:0.9,death:'徒手修电闸被电得跳霹雳舞',correctPath:3,bio:'万能修理工，莽撞但热心',personality:'莽撞、热心、自以为是、勤劳',married:true,concern:'担心老伴不会换灯泡',concernResult:'托梦教老伴换灯泡',lines:{enter:['我寻思不就是两根线嘛！'],death:['跳闸了叫电工花钱…'],good:['帮邻居修自行车'],bad:['觉得自己啥都会'],self:['热心肠老头'],last:['下辈子当专业电工'],auto:['大人你咋不说话']},skill_reveal:['糯米呸呸！','玉佩照冷静了','桃木剑想起来了！']},
+  {name:'小明',age:17,title:'国服第一喷(自封)',voicePitch:1.5,voiceRate:1.4,death:'打游戏72小时猝死',correctPath:4,bio:'高二学生，游戏天赋高自制力差',personality:'暴躁、讲义气、沉迷游戏、嘴硬心软',concern:'想让爸妈知道没事',concernResult:'已托梦给爸妈',lines:{enter:['让我回去！晋级赛啊！'],death:['ADC杀二十个…'],good:['带飞过萌新'],bad:['骂队友摔键盘'],self:['可能有点沉迷'],last:['差一把就王者了'],auto:['大人你什么段位']},skill_reveal:['糯米撒我干嘛！','玉佩照逃过课','桃木剑偷过钱！']},
+  {name:'淑芬',age:33,title:'轻功自学博士(肄业)',voicePitch:1.1,voiceRate:1.1,death:'学轻功水上漂从三楼跳进池塘',correctPath:3,bio:'短视频重度用户，单纯善良',personality:'单纯、善良、好骗、乐观',married:true,concern:'怕老公把修仙视频当遗产',concernResult:'已删光修仙视频',lines:{enter:['视频明明很轻松的！！'],death:['大师说心诚则灵…'],good:['心态好'],bad:['太容易信人'],self:['不太聪明但好人'],last:['下辈子当条鱼'],auto:['你觉得视频真的假的']},skill_reveal:['糯米撒醒了','玉佩照脸红了','桃木剑想起来了！']},
+  {name:'建国',age:62,title:'杠精学泰斗',voicePitch:0.8,voiceRate:0.9,death:'争论先有鸡还是先有蛋三天脑溢血',correctPath:2,bio:'退休语文老师，爱较真',personality:'固执、正直、好胜、讲理',concern:'想让老张认输',concernResult:'托梦告诉老张：先有鸡',lines:{enter:['先有鸡还是先有蛋？'],death:['老张非说先有蛋！'],good:['讲道理正大光明'],bad:['买酱油辩论半小时'],self:['性子急不服输'],last:['告诉老张我赢了'],auto:['你也支持先有蛋？']},skill_reveal:['糯米搞偷袭？','玉佩照没脾气','桃木剑我服了！']},
+  {name:'美玲',age:27,title:'自拍艺术家(已故)',voicePitch:1.2,voiceRate:1.1,death:'悬崖边倒立自拍被风吹下',correctPath:4,bio:'小网红，虚荣但努力',personality:'虚荣、努力、爱美、冒险',concern:'帮我发朋友圈不能白死',concernResult:'已发朋友圈九百赞',lines:{enter:['朋友圈还差这张照片！'],death:['夕阳云海倒立…'],good:['教粉丝瑜伽'],bad:['踩坏花圃拍照'],self:['爱美爱被夸'],last:['帮我发朋友圈'],auto:['这地方灯光不够']},skill_reveal:['糯米撒清醒了','玉佩照不好意思','剑扎得想起来了！']},
+  {name:'张老师',age:51,title:'最美乡村教师',voicePitch:0.9,voiceRate:0.9,death:'救落水学生跳河力竭沉没',correctPath:0,bio:'乡村教师三十年',personality:'温和、坚韧、无私、慈爱',concern:'放心不下落水学生',concernResult:'学生已回学校成绩不错',intro:{icon:'🏫',replies:[{label:'孩子们都平安，成绩很好',t:'那就好…那就好。我这心，总算是放下了。谢谢你。',mood:'grateful',r:1},{label:'有个孩子还在医院',t:'…我想回去守着。他从小怕黑，得有人陪着。',mood:'sad',r:0},{label:'先说说你自己',t:'我这一生教书育人，问心无愧。您尽管问。',mood:'calm',r:0}]},lines:{enter:['孩子们都平安吧？'],death:['水很冷很急…'],good:['教书三十年'],bad:['年轻时骂过娃'],self:['一生清贫无愧'],last:['老师去远方了'],auto:['大人先忙我不急']},skill_reveal:['糯米小把戏','玉佩照心头暖','桃木剑不怕刺']},
+  {name:'王老六',age:39,title:'职业忽悠艺术家',enemy:true,voicePitch:0.8,voiceRate:0.7,death:'骗黑老大钱被追杀跳臭水沟',correctPath:5,bio:'江湖骗子，专骗有钱人',personality:'油滑、讲义气、聪明、贪婪',married:true,concern:'床底钱别被老婆发现',concernResult:'钱捐希望工程了',lines:{enter:['怎么是你？！完了…'],death:['做点小生意得罪人…'],good:['捐过五块钱'],bad:['骗过不少人'],self:['没杀人放火'],last:['床底藏了笔钱'],auto:['大人你盯着我看']},skill_reveal:['糯米我招了！','玉佩照原形毕露','桃木剑全招了！']},
+  {name:'大龙',age:43,title:'KTV战神(已陨落)',voicePitch:0.6,voiceRate:0.9,death:'唱死了都要爱飙高音脑溢血',correctPath:2,bio:'KTV麦霸，豪爽好胜',personality:'豪爽、好胜、热情、冲动',concern:'希望兄弟别忘了我',concernResult:'照片挂在包厢了',lines:{enter:['死了都要爱！！'],death:['高音撑了八秒！'],good:['KTV气氛担当'],bad:['抢麦切歌'],self:['好胜心强'],last:['那高音真唱上去了'],auto:['大人有音响吗']},skill_reveal:['糯米正唱高潮','玉佩照冷静了','桃木剑想起来了']},
+  {name:'刘医生',age:66,title:'仁心医者',voicePitch:0.8,voiceRate:0.8,death:'连续手术12小时累倒',correctPath:0,bio:'三甲医院老专家',personality:'沉稳、内敛、无私、严谨',married:true,concern:'对不起老伴陪太少',concernResult:'托梦老伴说下辈子还嫁',lines:{enter:['手术成功了吗？'],death:['三台大手术…'],good:['四十年救人'],bad:['陪家人太少'],self:['尽医生本分'],last:['下辈子当牛做马'],auto:['医院今天忙吗']},skill_reveal:['糯米小把戏','玉佩照通透','桃木剑不怕']},
+  {name:'二狗',age:23,title:'厨房毁灭者',voicePitch:1.3,voiceRate:1.3,death:'微波炉加热泡面没加水爆炸',correctPath:3,bio:'外卖依赖者，动手能力为负',personality:'憨厚、可爱、笨拙、乐观',concern:'怕妈把炸厨房照片发群',concernResult:'已拦截照片',lines:{enter:['说明书说不可空载！'],death:['连包装放进去…'],good:['喂流浪猫失败料理'],bad:['煮糊七口锅'],self:['动手能力不行'],last:['下辈子当厨具'],auto:['大人你饿不饿']},skill_reveal:['糯米眼睛进东西','玉佩照不好意思','剑扎想起来了']},
+  {name:'小丽',age:22,title:'短视频作死达人',voicePitch:1.4,voiceRate:1.3,death:'蒙眼倒走穿车流失败',correctPath:3,bio:'短视频博主，为流量拼命',personality:'活泼、冲动、虚荣、缺乏判断力',concern:'想视频火不想白死',concernResult:'买流量三百万播放',intro:{icon:'📱',replies:[{label:'火了，三百万人看过',t:'真的？！那我死得也值了！嘿嘿——哎不对，我还是想活…',mood:'happy',r:1},{label:'没人看',t:'…那我真是白死了。我这命啊，流量没蹭到，命先没了。',mood:'sad',r:0},{label:'命都没了还惦记这个',t:'也是哦，我都死透了。那大人…给我刷个火箭呗？',mood:'calm',r:0}]},lines:{enter:['视频火了吗？！'],death:['蒙眼倒走挑战…'],good:['给大家带来快乐'],bad:['为流量什么都拍'],self:['想红想疯了'],last:['用生命在拍摄'],auto:['你刷到我视频吗']},skill_reveal:['糯米撒醒了','玉佩照脸红了','桃木剑想起来了']},
+  {name:'老陈',age:58,title:'广场舞毁灭者',voicePitch:0.7,voiceRate:0.8,death:'跳最炫民族风后撤步掉井里',correctPath:1,bio:'广场舞领队，乐观霸道',personality:'乐观、霸道、热情、固执',concern:'让社区补井盖别害人',concernResult:'已举报井盖补好了',lines:{enter:['音乐呢？！'],death:['留下来！后撤步…'],good:['教上百人跳舞'],bad:['音响太大被投诉'],self:['爱跳舞的老头'],last:['下辈子当音箱'],auto:['大人你跳广场舞吗']},skill_reveal:['糯米呸呸','玉佩照心虚','桃木剑想起来了']},
+  {name:'小芳',age:26,title:'极端减肥艺术家',voicePitch:1.3,voiceRate:1.2,death:'节食30天饿晕从楼梯滚下',correctPath:4,bio:'平面模特，敏感善良',personality:'敏感、善良、自律、自卑',concern:'别让妈把减肥日记发网',concernResult:'已回收日记',lines:{enter:['我瘦了吗？'],death:['只吃苹果一个月…'],good:['带动办公室减肥'],bad:['催吐吃减肥药'],self:['太在乎身材'],last:['想吃热干面'],auto:['你说我胖吗']},skill_reveal:['糯米多久没吃米','玉佩照看清了','桃木剑扎醒了']},
+  {name:'大刘',age:45,title:'钓鱼界传说',voicePitch:0.7,voiceRate:0.9,death:'钓大鱼被拖进水里没松竿',correctPath:3,bio:'钓鱼狂热者，沉稳爱吹牛',personality:'沉稳、执着、爱吹牛、实在',concern:'别让兄弟知道是小鱼',concernResult:'编了八十斤巨鱼故事',lines:{enter:['那条鱼这么大！'],death:['搏斗半小时…'],good:['钓到鱼分邻居'],bad:['吹牛大十倍'],self:['爱钓鱼爱吹牛'],last:['竿子一起烧了'],auto:['大人你钓鱼吗']},skill_reveal:['糯米别吓跑鱼','玉佩照老实了','桃木剑吹牛大了']},
+  {name:'静静',age:24,title:'社交恐惧症推广大使',voicePitch:1.5,voiceRate:0.7,death:'被暗恋对象表白社恐心脏骤停',correctPath:1,bio:'插画师，温柔内向',personality:'温柔、内向、敏感、渴望被爱',concern:'想让他知道我愿意',concernResult:'托梦告诉他了',lines:{enter:['别…别看我…'],death:['所有人喊答应他…'],good:['帮助社恐网友'],bad:['不敢说话背黑锅'],self:['胆小怕事'],last:['我愿意…'],auto:['（沉默）']},skill_reveal:['糯米啊别撒','玉佩照暖洋洋','桃木剑不紧张了']},
+  {name:'老李',age:52,title:'养生鬼才',voicePitch:0.8,voiceRate:0.9,death:'喝自酿草药酒中毒',correctPath:3,bio:'退休工人，痴迷养生偏方',personality:'固执、热心、迷信、乐观',married:true,concern:'怕群友还在喝配方',concernResult:'已举报删配方',lines:{enter:['配方真的没问题！'],death:['蝎子蜈蚣泡酒…'],good:['养生群分享知识'],bad:['乱开药吃坏肝肾'],self:['想活久一点'],last:['配方笔记烧了吧'],auto:['大人你气色不好']},skill_reveal:['糯米粮食酒原料','玉佩照头晕','桃木剑瞎编的']},
+  {name:'阿豪',age:32,title:'赌场慈善家',voicePitch:0.9,voiceRate:1.0,death:'出老千被发现跳窗摔死',correctPath:5,bio:'职业赌徒，油滑讲义气',personality:'油滑、讲义气、贪婪、冲动',concern:'欠老王三万没还',concernResult:'已用冥币还了',lines:{enter:['我那是技术！'],death:['赢了二十多万…'],good:['赢钱请兄弟吃饭'],bad:['确实出过千'],self:['好赌爱吹不老实'],last:['帮我还三万'],auto:['大人赌一把吗']},skill_reveal:['糯米毁藏牌','玉佩照赤裸裸','桃木剑招了！']},
+  {name:'小蝶',age:24,title:'阴间第一美·毒舌名媛',meangirl:true,voicePitch:1.2,voiceRate:1.3,death:'吐槽老板假睫毛卡气管',correctPath:1,bio:'美妆博主，嘴毒心善',personality:'傲娇、毒舌、重情义、爱美',concern:'让闺蜜别看男人来陪我',concernResult:'托梦闺蜜烧新男友',lines:{enter:['这地方灯光不够显白'],death:['假睫毛掉嗓子眼…'],good:['帮姐妹鉴渣男'],bad:['嘴毒打到自闭'],self:['我这张脸就是正义'],last:['那条裙子显胖'],auto:['死了皮肤变差吗']},skill_reveal:['糯米敢撒我？','玉佩照素颜了','桃木剑P图了']},
+  {name:'小美',age:25,title:'毒舌二当家·八卦女王',meangirl:true,voicePitch:1.3,voiceRate:1.4,death:'听到八卦笑到从楼梯滚下',correctPath:1,bio:'八卦女王，活泼开朗',personality:'活泼、八卦、开朗、大嘴巴',concern:'把小蝶朋友圈发完',concernResult:'已发九宫格配文',lines:{enter:['小蝶来没来？！'],death:['Linda被老公绿了！'],good:['给姐妹情感咨询'],bad:['什么秘密都憋不住'],self:['热心肠加话多'],last:['给我占好位置'],auto:['这里鬼好丑啊']},skill_reveal:['糯米妆花了','玉佩照不好意思','桃木剑说太多了']},
+  {name:'赵扒皮',age:54,title:'前老板·万恶资本家',enemy:true,voicePitch:0.6,voiceRate:0.8,death:'压榨员工被程序员黑系统气心梗',correctPath:5,bio:'互联网老板，996教父',personality:'刻薄、精明、控制欲强、冷漠',married:true,concern:'让女儿别学我做好人',concernResult:'托梦女儿说好好做人',lines:{enter:['怎么是你？！'],death:['系统全瘫痪！'],good:['捐过希望小学'],bad:['压榨克扣工资'],self:['没杀人放火'],last:['服务器密码我生日'],auto:['你能换判官吗']},skill_reveal:['糯米打击报复','玉佩照偷过钱','桃木剑性骚扰']},
+  {name:'阿珍',age:31,title:'外卖骑手·城市飞侠',voicePitch:1.0,voiceRate:1.1,death:'送餐被豪车撞飞',correctPath:1,bio:'女外卖骑手，坚韧乐观',personality:'坚韧、乐观、勤劳、爱猫',concern:'橘猫没人喂',concernResult:'宠物店每天上门喂',lines:{enter:['客户会不会给差评'],death:['前轮刚好过线…'],good:['帮老人带药扛米'],bad:['逆行过几次'],self:['跑腿的没害过人'],last:['麻辣烫别差评'],auto:['大人你饿不饿']},skill_reveal:['糯米闯过红灯','玉佩照暖暖的','桃木剑推过骑手']},
+  {name:'大爷',age:72,title:'公园象棋王',voicePitch:0.6,voiceRate:0.7,death:'被马后炮将死气到心梗',correctPath:1,bio:'象棋常胜将军',personality:'好胜、正直、固执、乐观',married:true,concern:'没人陪老伴晒太阳',concernResult:'托梦儿子推妈去公园',lines:{enter:['悔棋！不算！'],death:['老周马后炮！'],good:['教孩子下棋'],bad:['爱悔棋掀棋盘'],self:['臭棋篓子人品行'],last:['告诉老周我赢了'],auto:['大人会下棋吗']},skill_reveal:['糯米眼睛进东西','玉佩照心静了','桃木剑偷过棋子']},
+  {name:'小宇',age:26,title:'996程序员·已宕机',voicePitch:1.1,voiceRate:1.0,death:'加班72小时趴键盘睡着',correctPath:1,bio:'后端程序员，GitHub千星',personality:'内向、幽默、执着、疲惫',concern:'项目没上线团队背锅',concernResult:'项目延期不追责',lines:{enter:['Bug修完了吗？'],death:['咖啡当水喝…'],good:['开源工具库'],bad:['写过屎山代码'],self:['码农没偷懒'],last:['commit修复死亡Bug'],auto:['大人懂代码吗']},skill_reveal:['糯米头发少','玉佩照该休息','桃木剑删过库']},
+  {name:'阿婆',age:78,title:'糖葫芦守护者',voicePitch:0.8,voiceRate:0.7,death:'冬夜收摊冻僵巷口',correctPath:0,bio:'卖四十年糖葫芦',personality:'慈祥、坚韧、善良、节俭',married:true,concern:'孙女学费差两千',concernResult:'找到钱交学费了',lines:{enter:['糖葫芦还没卖完'],death:['风像刀子…'],good:['资助三个学生'],bad:['缺斤短两五毛'],self:['穷老太太心好'],last:['带给孙女'],auto:['大人吃糖葫芦吗']},skill_reveal:['糯米眼睛不好','玉佩照亮堂','桃木剑问心无愧']},
+  {name:'铁柱',age:41,title:'高空舞者·建筑工人',voicePitch:0.7,voiceRate:0.9,death:'脚手架松动十二楼坠落',correctPath:1,bio:'建筑工人二十年',personality:'朴实、憨厚、勤劳、爱子',married:true,concern:'儿子高考学费差一半',concernResult:'互助基金有着落',lines:{enter:['安全帽没系紧？'],death:['木板晃了一下…'],good:['帮工友借钱'],bad:['拿过几根钢筋'],self:['干苦力凭力气'],last:['爸没本事但爱你'],auto:['大人招工吗']},skill_reveal:['糯米拿过东西','玉佩照踏实了','桃木剑卖过废料']},
+  {name:'小花',age:29,title:'桥洞歌手·流浪诗人',voicePitch:1.2,voiceRate:1.0,death:'桥洞弹唱冻僵失温',correctPath:1,bio:'流浪歌手，浪漫洒脱',personality:'浪漫、洒脱、善良、孤独',concern:'吉他捐给福利院孩子',concernResult:'已捐福利院孩子喜欢',lines:{enter:['让我再唱一首'],death:['手指越来越僵…'],good:['捐钱给救助站'],bad:['被赶偷偷回去唱'],self:['爱唱歌没出息'],last:['再唱海阔天空'],auto:['大人喜欢什么歌']},skill_reveal:['糯米乞讨过','玉佩照脸红了','桃木剑造假了']},
+  {name:'老周',age:63,title:'退休刑警·老猎犬',voicePitch:0.7,voiceRate:0.8,death:'追捕逃犯被捅三刀',correctPath:0,bio:'四十年刑警破案率第一',personality:'刚毅、正直、勇敢、执着',married:true,concern:'案子没破家属在等',concernResult:'DNA比对快破了',intro:{icon:'🕵️',replies:[{label:'抓到了，DNA比对上了',t:'真的？！太好了…我这四十年的案子，总算有个交代了。替我谢谢弟兄们。',mood:'grateful',r:1},{label:'还差最后一步',t:'…案子一天不破，家属就一天睡不安稳。大人，拜托了。',mood:'sad',r:0},{label:'先交代你自己的事',t:'您说得对，办案先办人。我交代，我全交代。',mood:'calm',r:0}]},lines:{enter:['嫌犯抓到了吗？'],death:['第一刀没躲…'],good:['坏人装满火车'],bad:['刑讯逼供过'],self:['对得起警徽'],last:['案子一定会破'],auto:['徒弟还行吗']},skill_reveal:['糯米受过伤','玉佩照心头热','桃木剑不怕']},
+  {name:'小雨',age:25,title:'白衣天使·抗疫护士',voicePitch:1.1,voiceRate:1.0,death:'连续值班48小时感染',correctPath:0,bio:'ICU护士疫情两个月没回家',personality:'温柔、坚韧、无私、细心',married:true,concern:'重症病人还好吗',concernResult:'病人康复出院感谢',intro:{icon:'🩺',replies:[{label:'病人都康复出院了',t:'那就好…我这心里压着的石头，总算能放下了。',mood:'grateful',r:1},{label:'有个病人情况不稳定',t:'怎么会…我走之前明明在好转。他们怎么办…',mood:'sad',r:0},{label:'先交代你自己',t:'我做的都是分内事，没什么可藏的。您问吧。',mood:'calm',r:0}]},lines:{enter:['病人都平安吧？'],death:['防护服破了…'],good:['五年没红过脸'],bad:['对家属态度不好'],self:['普通护士该做的'],last:['好好活着'],auto:['需要护士吗']},skill_reveal:['糯米过敏了','玉佩照暖暖的','桃木剑救过人']},
+  {name:'大壮',age:35,title:'烈火英雄·消防员',voicePitch:0.7,voiceRate:0.9,death:'冲进火场楼板坍塌',correctPath:0,bio:'十二年消防员无数次出警',personality:'勇敢、沉稳、无私、担当',married:true,concern:'兄弟没人受伤吧',concernResult:'中队全员平安立碑',intro:{icon:'🚒',replies:[{label:'人都救出来了，全员平安',t:'好…好！兄弟们一个没少，我这命没白搭。',mood:'grateful',r:1},{label:'有个战士受了伤',t:'伤得重不重？！是不是小刘？他总冲最前面…',mood:'sad',r:0},{label:'先交代你自己的事',t:'我冲进火场就没想活着出来，这是我的职责。您问吧。',mood:'calm',r:0}]},lines:{enter:['人都救出来了吗？'],death:['用身体护着孩子…'],good:['救过数不清的人'],bad:['出警前喝过酒'],self:['命是国家心是百姓'],last:['别难过我的选择'],auto:['有消防演练吗']},skill_reveal:['糯米正灭火','玉佩照踏实','桃木剑扛过火']},
+  {name:'阿芳',age:38,title:'单亲妈妈·超人',voicePitch:1.0,voiceRate:1.0,death:'打三份工过劳死在便利店',correctPath:1,bio:'单亲妈妈独自抚养八年',personality:'坚强、温柔、无私、勤劳',married:true,concern:'女儿才八岁谁照顾',concernResult:'妹妹答应抚养成年',lines:{enter:['女儿还好吗？'],death:['凌晨三点胸口剧痛…'],good:['拉扯到八岁'],bad:['对女儿发脾气'],self:['就是个当妈的'],last:['妈妈永远爱你'],auto:['阴间能打工吗']},skill_reveal:['糯米眼睛进东西','玉佩照酸酸的','桃木剑偷过面包']},
+  {name:'老吴',age:55,title:'夜班司机·城市守夜人',voicePitch:0.8,voiceRate:0.9,death:'被醉酒乘客捅伤开到派出所',correctPath:0,bio:'二十年夜班出租车司机',personality:'沉稳、善良、负责、坚韧',married:true,concern:'车贷别让老婆背债',concernResult:'公司捐款车贷还清',intro:{icon:'🚕',replies:[{label:'抓到了，已经判了',t:'好！那个王八蛋…我这一刀总算没白挨。谢谢大人。',mood:'grateful',r:1},{label:'还在逃',t:'哎…老婆孩子那边，我放心不下啊。',mood:'sad',r:0},{label:'先说你的事',t:'行，我这人干一行守一行，您问吧。',mood:'calm',r:0}]},lines:{enter:['乘客抓到了吗？'],death:['硬撑到派出所…'],good:['追还钱包'],bad:['拒载过'],self:['开车的守规矩'],last:['没让老婆担过心'],auto:['需要司机吗']},skill_reveal:['糯米伤口疼','玉佩照踏实','桃木剑开过夜路']},
+  {name:'小林',age:18,title:'高三学子·压力山大',voicePitch:1.4,voiceRate:1.2,death:'高考前跳楼遗书我尽力了',correctPath:1,bio:'高三学生压力极大',personality:'敏感、善良、压抑、懂事',concern:'别让爸妈知道自杀',concernResult:'托梦说是意外坠楼',lines:{enter:['爸妈还好吗？'],death:['风很大就跳了…'],good:['帮同学补课'],bad:['偷钱买辅导书'],self:['失败者熬不过去'],last:['对不起尽力了'],auto:['阴间有大学吗']},skill_reveal:['糯米够难受','玉佩照暖暖','桃木剑伪造过']},
+  {name:'铁蛋',age:35,title:'钢铁直男·焊工',voicePitch:0.7,voiceRate:0.9,death:'电焊时火花引燃防护服',correctPath:2,bio:'工地电焊工，硬汉爱养花',personality:'倔强、讲义气、硬汉、重情',married:true,concern:'阳台那盆月季没人浇',concernResult:'已托梦让邻居浇花',lines:{enter:['那盆花还活着吗？'],death:['火花溅到衣服上…'],good:['帮工友挡过砖头'],bad:['跟包工头顶过嘴'],self:['粗人一个但讲义气'],last:['替我给花浇水'],auto:['大人你懂电焊吗']},skill_reveal:['糯米熏到眼睛','玉佩照烫伤','桃木剑焊过梁']},
+  {name:'梅花',age:50,title:'绣花针下女状元',voicePitch:0.9,voiceRate:0.9,death:'熬夜绣十字绣颈椎错位',correctPath:1,bio:'刺绣大师，手艺巧心肠软',personality:'温柔、耐心、要强、节俭',married:true,concern:'让女儿别学我熬坏了眼',concernResult:'已托梦女儿注意休息',lines:{enter:['我绣的牡丹还没绣完…'],death:['颈椎咔哒一声…'],good:['教村里姑娘刺绣'],bad:['眼红别人手艺好'],self:['就是个绣花娘'],last:['那幅牡丹烧给我吧'],auto:['大人要学绣花吗']},skill_reveal:['糯米扎手了','玉佩照心疼','桃木剑别乱扎']},
+  {name:'富贵',age:48,title:'农村致富带头人',voicePitch:0.8,voiceRate:0.9,death:'被自己养的猪追着掉粪坑',correctPath:3,bio:'养殖大户，精明能干',personality:'精明、爱吹牛、热心、抠门',married:true,concern:'让儿子别乱花积蓄',concernResult:'已托梦让儿子存钱',lines:{enter:['我那猪场咋样了？'],death:['老母猪发疯追我…'],good:['带动全村养猪'],bad:['喂过病猪肉'],self:['精明人不吃亏'],last:['把猪场留给儿子'],auto:['大人你吃过猪肉吗']},skill_reveal:['糯米呛到猪饲料','玉佩照发财了','桃木剑戳到猪圈']},
+  {name:'春香',age:21,title:'直播界新星(已凉)',voicePitch:1.4,voiceRate:1.3,death:'直播吃播暴饮暴食被噎死',correctPath:4,bio:'吃播博主，胃口好嗓门大',personality:'开朗、贪吃、爱面子、善良',concern:'别让粉丝学我暴食',concernResult:'已发视频劝大家健康吃',lines:{enter:['我的粉丝还在等我吗？'],death:['这肘子太香了…'],good:['直播带农产品'],bad:['为了流量暴食'],self:['管不住这张嘴'],last:['想吃我妈做的饭'],auto:['大人你吃夜宵吗']},skill_reveal:['糯米把我噎着','玉佩照饱了','桃木剑剔牙吗']},
+  {name:'老孔',age:60,title:'修表匠·时间守护者',voicePitch:0.7,voiceRate:0.8,death:'修表时放大镜聚光引燃桌布',correctPath:0,bio:'修表四十年，一丝不苟',personality:'专注、严谨、寡言、善良',married:true,concern:'让老伴把那块老表修好',concernResult:'已托梦老伴找表匠',lines:{enter:['那块老怀表修好了吗？'],death:['放大镜聚光点着…'],good:['修过上万块表'],bad:['报过虚价'],self:['守时的老匠人'],last:['把怀表传给孙子'],auto:['大人你几点下班']},skill_reveal:['糯米进齿轮了','玉佩照锈了','桃木剑上发条']},
+  {name:'小琴',age:28,title:'琴棋书画样样通',voicePitch:1.2,voiceRate:1.1,death:'古琴弦断划破喉咙',correctPath:0,bio:'古琴老师，气质文雅',personality:'文雅、执着、清高、心软',concern:'让关门弟子别放弃古琴',concernResult:'已托梦弟子坚持练琴',lines:{enter:['那首广陵散还没弹完…'],death:['弦断的声音好刺耳…'],good:['教聋哑孩子学琴'],bad:['嫌学生笨骂过'],self:['琴痴一个'],last:['把我那把琴烧了'],auto:['大人爱听琴吗']},skill_reveal:['糯米别糊了弦','玉佩照素雅','桃木剑像琴拨']},
+  {name:'老财',age:52,title:'理财大师·韭菜大王',voicePitch:0.8,voiceRate:0.9,death:'看股票涨停又跌停心脏病发',correctPath:3,bio:'散户代表，追涨杀跌',personality:'乐观、贪心、爱赌、嘴硬',married:true,concern:'让老婆别把棺材本赔光',concernResult:'已托梦老婆及时止损',lines:{enter:['今天大盘涨了吗？'],death:['满仓绿油油…'],good:['牛市带乡亲赚过钱'],bad:['套牢多少人'],self:['资深韭菜'],last:['把股票都清仓吧'],auto:['大人你也炒股吗']},skill_reveal:['糯米绿得发慌','玉佩照涨停','桃木剑割韭菜']},
+  {name:'阿花',age:38,title:'早餐店老板娘',voicePitch:1.0,voiceRate:1.0,death:'凌晨炸油条被油锅溅到',correctPath:1,bio:'卖油条豆腐脑二十年',personality:'勤劳、爽快、大方、刀子嘴',married:true,concern:'让儿子接手早餐店',concernResult:'已托梦儿子学手艺',lines:{enter:['今天的油条卖完了吗？'],death:['油锅噗啦一下…'],good:['免费给环卫工吃'],bad:['用地沟油被抓过'],self:['起早贪黑挣钱'],last:['教儿子炸油条'],auto:['大人吃豆腐脑吗']},skill_reveal:['糯米油锅里翻','玉佩照踏实','桃木剑串油条']},
+  {name:'黑子',age:26,title:'围棋少年·国手胚子',voicePitch:1.1,voiceRate:1.0,death:'下棋入迷三天没吃饭饿晕',correctPath:0,bio:'围棋天才，不善言辞',personality:'专注、内敛、坚韧、好胜',concern:'让师傅把那盘棋研究完',concernResult:'已托梦师傅复盘',lines:{enter:['那盘棋…还有救吗？'],death:['官子算错一步…'],good:['教小学生下棋'],bad:['复盘时骗过师傅'],self:['一生黑白两色'],last:['把我棋谱烧给我'],auto:['大人会下围棋吗']},skill_reveal:['糯米落子无声','玉佩照棋盘','桃木剑做劫材']},
+  {name:'凤姐',age:44,title:'旗袍女王·裁缝',voicePitch:0.9,voiceRate:0.9,death:'缝纫机针头弹射扎进胸口',correctPath:1,bio:'旗袍裁缝，审美一流',personality:'骄傲、细致、嘴硬心软、爱美',married:true,concern:'让女儿把那件旗袍穿上',concernResult:'已托梦女儿穿上出嫁',lines:{enter:['那件旗袍合身吗？'],death:['针弹起来好快…'],good:['给灾区做棉衣'],bad:['看不上土裁缝'],self:['手艺第一讲究'],last:['旗袍留给我闺女'],auto:['大人你尺码多少']},skill_reveal:['糯米蹭到绣花','玉佩照模特','桃木剑比针还利']},
+  {name:'阿勇',age:30,title:'健身狂魔·蛋白粉斗士',voicePitch:1.0,voiceRate:1.1,death:'深蹲重量过大被杠铃压扁',correctPath:3,bio:'健身教练，自律上瘾',personality:'自律、执着、爱炫耀、心善',concern:'让学员别瞎练伤膝盖',concernResult:'已托梦学员请教练',lines:{enter:['我的肌肉还在吗？'],death:['三百斤杠铃压下来…'],good:['免费带过百人健身'],bad:['给学员推销蛋白粉'],self:['自律即自由'],last:['把杠铃片都卖掉'],auto:['大人你撸铁吗']},skill_reveal:['糯米蛋白粉撒了','玉佩照肌肉','桃木剑比杠铃重']},
+  {name:'小红',age:27,title:'幼儿园园花·幼师',voicePitch:1.3,voiceRate:1.2,death:'被小朋友传染流感加劳累猝死',correctPath:0,bio:'幼师三年，孩子王',personality:'活泼、温柔、耐心、大嗓门',concern:'让家长多陪陪孩子',concernResult:'已托梦家长放下手机',lines:{enter:['孩子们有没有想我？'],death:['发烧还去上班…'],good:['带过一屋子娃娃'],bad:['偷吃过娃的零食'],self:['就是一孩子王'],last:['把我的玩具捐了'],auto:['大人你要听儿歌吗']},skill_reveal:['糯米糊了娃的玩具','玉佩照成孩子王','桃木剑当教鞭']},
+  {name:'来福',age:65,title:'退休教师·太极拳大师',voicePitch:0.7,voiceRate:0.8,death:'教太极被徒弟一个趔趄撞倒',correctPath:0,bio:'体育老师退休，太极高手',personality:'温和、豁达、爱显摆、善良',married:true,concern:'让徒弟把太极队带好',concernResult:'已托梦徒弟当队长',lines:{enter:['我的太极队还练吗？'],death:['被徒弟撞个正着…'],good:['免费教了二十年太极'],bad:['吹嘘太极能隔空打人'],self:['修身养性一辈子'],last:['把功夫传给徒弟'],auto:['大人跟我练太极吗']},skill_reveal:['糯米四两拨千斤','玉佩照心静','桃木剑当太极剑']},
+  {name:'雪儿',age:20,title:'cos圈白月光·漫展女皇',voicePitch:1.5,voiceRate:1.3,death:'穿高跟鞋追公交被绊倒撞电线杆',correctPath:1,bio:'coser，颜值担当',personality:'爱美、虚荣、中二、善良',concern:'让cp粉别闹矛盾',concernResult:'已托梦粉丝和好',lines:{enter:['我的假发歪了吗？'],death:['高跟鞋太高了…'],good:['给孤儿院扮公主'],bad:['抢过别人C位'],self:['就是个coser'],last:['把我cos服烧给我'],auto:['大人要cos判官吗']},skill_reveal:['糯米糊了假发','玉佩照妆花了','桃木剑COS用的']},
+  {name:'老田',age:57,title:'农民诗人·田埂上鲁迅',voicePitch:0.8,voiceRate:0.8,death:'下田被黄牛顶到田埂上',correctPath:1,bio:'写诗三十年的农民',personality:'文艺、执着、幽默、朴素',married:true,concern:'让诗集能出版',concernResult:'已托梦出版社留意',lines:{enter:['我的诗集印出来了吗？'],death:['黄牛它不讲武德…'],good:['写诗写进课本'],bad:['用牛粪堆过诗'],self:['握笔的手有老茧'],last:['把我的诗撒进田里'],auto:['大人你读诗吗']},skill_reveal:['糯米成了诗','玉佩照灵感','桃木剑写断笔']},
+  {name:'妞妞',age:19,title:'鬼屋NPC·惊吓大师',voicePitch:1.5,voiceRate:1.3,death:'扮鬼吓人反被玩家吓到心脏病',correctPath:1,bio:'鬼屋演员，胆大包天',personality:'活泼、爱闹、胆大、缺心眼',concern:'让老板别扣我工资',concernResult:'已托梦老板结工资',lines:{enter:['我这扮相吓人不？'],death:['那玩家比我还会吓…'],good:['吓哭坏人帮人出气'],bad:['吓晕过心脏病游客'],self:['天生吓人料'],last:['把我工作服烧了'],auto:['大人我吓你一下？']},skill_reveal:['糯米从头发里漏','玉佩照不吓人','桃木剑吓得直哆嗦']},
+  {name:'陈师傅',age:49,title:'出租车老司机·活地图',voicePitch:0.8,voiceRate:0.9,death:'为避让行人撞上护栏',correctPath:1,bio:'开出租二十五年',personality:'热心、实在、健谈、认死理',married:true,concern:'让徒弟别疲劳驾驶',concernResult:'已托梦徒弟停休',lines:{enter:['乘客都送到了吗？'],death:['一把方向打过去…'],good:['送孕妇去医院'],bad:['绕路多收过钱'],self:['认路不认命'],last:['把车留给徒弟'],auto:['大人要去哪我熟']},skill_reveal:['糯米呛到尾气','玉佩照车灯','桃木剑当档把']},
+  {name:'小星',age:23,title:'天文爱好者·追星少年',voicePitch:1.2,voiceRate:1.1,death:'楼顶看流星雨踩空坠落',correctPath:0,bio:'天文迷，浪漫文艺',personality:'浪漫、执着、单纯、害羞',concern:'让同学帮我收望远镜',concernResult:'已托梦同学保管',lines:{enter:['今晚有流星雨吗？'],death:['流星划过去那刻…'],good:['教小朋友认星星'],bad:['偷看隔壁楼顶'],self:['爱看星星的少年'],last:['把望远镜烧给我'],auto:['大人你看过极光吗']},skill_reveal:['糯米像银河','玉佩照星星','桃木剑指北极星']},
+  {name:'老奶奶',age:81,title:'百岁老人·长寿密码',voicePitch:0.6,voiceRate:0.7,death:'睡梦中安详离世',correctPath:0,bio:'活到一百零一岁',personality:'慈祥、通透、乐观、啰嗦',married:true,concern:'让重孙好好上学',concernResult:'已托梦重孙读书',lines:{enter:['孩子们都还好吗？'],death:['睡着觉就走了…'],good:['养大了五世同堂'],bad:['年轻时拿过鸡'],self:['活够本了'],last:['我这一生值了'],auto:['大人要听长寿秘诀吗']},skill_reveal:['糯米长寿米','玉佩照和气','桃木剑不沾血']},
+  {name:'阿飞',age:30,title:'外卖侠·风里来雨里去',voicePitch:1.1,voiceRate:1.2,death:'暴雨天送餐被树枝砸中',correctPath:1,bio:'外卖骑手，拼命三郎',personality:'乐观、倔强、热心、急性子',concern:'让顾客别给我差评',concernResult:'已托梦顾客理解',lines:{enter:['今天的单送完了吗？'],death:['风大雨大树枝断…'],good:['帮老人带药'],bad:['闯过红灯'],self:['跑腿的凭本事'],last:['别给我打差评'],auto:['大人要点外卖吗']},skill_reveal:['糯米黄袍加身','玉佩照逆行了','桃木剑差点没接住']},
+];
+
+const container = document.getElementById('game-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf5f0eb);
+scene.fog = new THREE.FogExp2(0xf5f0eb, 0.008);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 1.7, 12);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, preserveDrawingBuffer:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+labelRenderer.domElement.style.zIndex = '4';
+container.appendChild(labelRenderer.domElement);
+
+// ===== Lighting =====
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+const mainLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
+mainLight.position.set(5, 10, 5); mainLight.castShadow = true;
+mainLight.shadow.mapSize.width = 1024; mainLight.shadow.mapSize.height = 1024;
+scene.add(mainLight);
+const fillLight = new THREE.DirectionalLight(0xeeeeee, 0.5);
+fillLight.position.set(-5, 3, -5); scene.add(fillLight);
+
+// ===== Scene Groups =====
+const SCENES = { LOBBY:'lobby', TRIAL:'trial', OFFICE:'office' };
+let currentScene = SCENES.LOBBY;
+let lobbyGroup = new THREE.Group();
+let trialGroup = new THREE.Group();
+let officeGroup = new THREE.Group();
+scene.add(lobbyGroup); scene.add(trialGroup); scene.add(officeGroup);
+trialGroup.visible = false; officeGroup.visible = false;
+
+// ===== Movement System =====
+const keys = { w:false, a:false, s:false, d:false };
+let yaw = 0, pitch = 0;
+let isPointerLocked = false;
+
+let dragStartX=0, dragStartY=0, isDraggingLook=false;
+
+function setupPointerLock() {
+  renderer.domElement.addEventListener('mousedown',(e)=>{
+    if(e.button!==0)return;
+    isDraggingLook=true;
+    dragStartX=e.clientX; dragStartY=e.clientY;
+  });
+  document.addEventListener('mousemove',(e)=>{
+    if(!isDraggingLook)return;
+    const dx=e.movementX||0, dy=e.movementY||0;
+    if(dx||dy){
+      yaw-=dx*0.002;
+      pitch-=dy*0.002;
+      pitch=Math.max(-1.2,Math.min(1.2,pitch));
+      updateCameraRotation();
+    }
+  });
+  document.addEventListener('mouseup',(e)=>{
+    if(e.button!==0||!isDraggingLook)return;
+    isDraggingLook=false;
+    const moved=Math.hypot(e.clientX-dragStartX,e.clientY-dragStartY);
+    if(moved<6) handleCenterClick();
+  });
+}
+
+function updateCameraRotation() {
+  if(currentScene===SCENES.TRIAL){
+    camera.position.set(playerPos.x, playerPos.y+1.6, playerPos.z);
+    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+    camera.quaternion.setFromEuler(euler);
+    if(playerModel){
+      playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);
+      playerModel.rotation.y=yaw+Math.PI;
+    }
+    return;
+  }
+  const dist=3.6;
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  const back=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)).normalize();
+  const camPos=new THREE.Vector3(
+    playerPos.x+back.x*dist*cp,
+    playerPos.y+sp*dist+1.1,
+    playerPos.z+back.z*dist*cp
+  );
+  camera.position.lerp(camPos,.25);
+  camera.lookAt(new THREE.Vector3(playerPos.x, playerPos.y+1.1, playerPos.z));
+}
+
+function updateMovement() {
+  if (currentScene === SCENES.TRIAL || isTransitioning || isSitting) {playerIsMoving=false;return;}
+  const speed = 0.08;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  dir.y = 0; dir.normalize();
+  const right = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0,1,0)).normalize();
+
+  const tryMove=(dx,dz)=>{
+    const nx=playerPos.x+dx, nz=playerPos.z+dz;
+    if(!checkCollision(nx,nz)){playerPos.x=nx;playerPos.z=nz;}
+  };
+  let moving=false;
+  if (keys.w){tryMove(dir.x*speed, dir.z*speed);moving=true;}
+  if (keys.s){tryMove(-dir.x*speed, -dir.z*speed);moving=true;}
+  if (keys.a){tryMove(-right.x*speed, -right.z*speed);moving=true;}
+  if (keys.d){tryMove(right.x*speed, right.z*speed);moving=true;}
+  playerIsMoving=moving;
+  if(playerModel){
+    playerModel.position.x=playerPos.x;
+    playerModel.position.y=playerPos.y;
+    playerModel.position.z=playerPos.z;
+    playerModel.rotation.y=yaw+Math.PI;
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (keys.hasOwnProperty(k)) { keys[k] = true; e.preventDefault(); }
+});
+document.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (keys.hasOwnProperty(k)) { keys[k] = false; e.preventDefault(); }
+});
+window.addEventListener('blur', () => { for(let k in keys) keys[k]=false; });
+document.addEventListener('pointerlockchange', () => { for(let k in keys) keys[k]=false; });
+
+// ===== Collision System =====
+let obstacles=[];
+function addObs(x1,x2,z1,z2){obstacles.push({x1,x2,z1,z2});}
+function checkCollision(x,z,pad=.3){
+  for(const o of obstacles){
+    if(x>o.x1-pad&&x<o.x2+pad&&z>o.z1-pad&&z<o.z2+pad)return o;
+  }
+  return null;
+}
+
+// ===== Build Lobby =====
+const officeDesks = [];
+const officeWorkers = [];
+
+function createLabel(text, color, scale=1) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  div.style.color = color;
+  div.style.fontSize = (14 * scale) + 'px';
+  div.style.fontWeight = 'bold';
+  div.style.textShadow = '0 1px 3px rgba(255,255,255,.8)';
+  div.style.pointerEvents = 'none';
+  return new CSS2DObject(div);
+}
+
+function buildLobby() {
+  const W=28,D=22,FY=-.5;
+  function am(geo,mat,x,y,z){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);lobbyGroup.add(m);}
+  // Floor
+  const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({color:0xe0dcd6,roughness:.8}));
+  fl.rotation.x=-Math.PI/2;fl.position.set(0,FY,-1);fl.receiveShadow=true;lobbyGroup.add(fl);
+  // Walls
+  const wm=new THREE.MeshStandardMaterial({color:0xf0eeea,roughness:.9});
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(W,12,1),wm);m.position.set(0,5.5,-12.5);lobbyGroup.add(m);})();
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(1,12,D+2),wm);m.position.set(-14,5.5,-1);lobbyGroup.add(m);})();
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(1,12,D+2),wm);m.position.set(14,5.5,-1);lobbyGroup.add(m);})();
+  (()=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({color:0xffffff,roughness:1}));m.position.set(0,11.5,-1);m.rotation.x=Math.PI/2;lobbyGroup.add(m);})();
+  // Ceiling lights
+  for(let i=0;i<4;i++){
+    am(new THREE.CylinderGeometry(.3,.3,.1,8),new THREE.MeshStandardMaterial({color:0xdddddd,emissive:0xffffee,emissiveIntensity:.2}),-9+i*6,11.4,0);
+    const p=new THREE.PointLight(0xfff8ee,.2,8);p.position.set(-9+i*6,10.5,0);lobbyGroup.add(p);
+  }
+  // ===== Room alcoves =====
+  const rfm=new THREE.MeshStandardMaterial({color:0xd8d4ce,roughness:.9});
+  const rwm=new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:.9});
+  const roomDefs=[
+    {x:-12,z:-5.5,lb:'🚻 厕所'},{x:-12,z:-.5,lb:'💧 饮水室'},{x:-12,z:4.5,lb:'☕ 休息室'},
+    {x:12,z:-5.5,lb:'📁 档案室'},{x:12,z:-.5,lb:'📋 咨询室'},{x:12,z:4.5,lb:'📚 资料室'},
+  ];
+  for(const r of roomDefs){
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(4,10,.2),rwm);m.position.set(r.x,4.5,r.z);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.2,10,4),rwm);m.position.set(r.x-2,4.5,r.z);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.2,10,4),rwm);m.position.set(r.x+2,4.5,r.z);lobbyGroup.add(m);})();
+    am(new THREE.BoxGeometry(3.8,.05,3.8),rfm,r.x,FY+.03,r.z);
+    (()=>{const l=createLabel(r.lb,'#888',.65);l.position.set(r.x,2.5,r.z+2);lobbyGroup.add(l);})();
+  }
+  // Room items
+  am(new THREE.BoxGeometry(.5,.05,.3),new THREE.MeshStandardMaterial({color:0xffffff}),-12.5,.07,-6);
+  am(new THREE.CylinderGeometry(.12,.08,.12,8),new THREE.MeshStandardMaterial({color:0xffffff}),-11.5,.05,-5);
+  am(new THREE.CylinderGeometry(.18,.22,.45,8),new THREE.MeshStandardMaterial({color:0x8899aa}),-12,.05,-1);
+  am(new THREE.CylinderGeometry(.16,.13,.35,8),new THREE.MeshStandardMaterial({color:0xddeeff,transparent:true,opacity:.5}),-12,.32,-1);
+  am(new THREE.BoxGeometry(1,.06,.6),new THREE.MeshStandardMaterial({color:0xc8b8a8}),-12,.28,4);
+  am(new THREE.BoxGeometry(.3,.08,.3),new THREE.MeshStandardMaterial({color:0xb8a898}),-12.5,.05,4.5);
+  for(let i=0;i<3;i++)am(new THREE.BoxGeometry(.6,.9,.03),new THREE.MeshStandardMaterial({color:0x8899aa}),12,.2+i*.4,-6);
+  am(new THREE.BoxGeometry(.8,.08,.5),new THREE.MeshStandardMaterial({color:0xc8b8a8}),12,.28,-1);
+  am(new THREE.BoxGeometry(.8,1.2,.4),new THREE.MeshStandardMaterial({color:0x8b7355}),12,.5,4);
+  // ===== Doors (on back wall, in front of wall face at z=-12) =====
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(3,4,.2),new THREE.MeshStandardMaterial({color:0xc8c0b8}));m.position.set(0,1.5,-12.05);m.userData={type:'door',target:'trial'};lobbyGroup.add(m);})();
+  (()=>{const l=createLabel('⚖️ 审判室','#c45555',.9);l.position.set(0,3.8,-11.9);lobbyGroup.add(l);})();
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(3,4,.3),new THREE.MeshStandardMaterial({color:0x4a3c2a}));m.position.set(8,1.5,-12.05);lobbyGroup.add(m);})();
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(2.2,3.2,.05),new THREE.MeshStandardMaterial({color:0xd0d0d8}));m.position.set(8,1.5,-12.18);m.userData={type:'door',target:'office'};lobbyGroup.add(m);})();
+  (()=>{const l=createLabel('📋 办公室','#5577aa',.8);l.position.set(8,3.5,-11.9);lobbyGroup.add(l);})();
+  // ===== Desks =====
+  const dm=new THREE.MeshStandardMaterial({color:0xd8d0c8,roughness:.7});
+  const cm=new THREE.MeshStandardMaterial({color:0xc0b8b0,roughness:.8});
+  const rows=[-8,-3,2];
+  for(const x of[-10,-7])for(const z of rows)mkDesk(x,z,dm,cm);
+  for(const x of[7,10])for(const z of rows)mkDesk(x,z,dm,cm);
+  function mkDesk(x,z,dm,cm){
+    const cx=x>0?x-.8:x+.8;
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(2,.1,1.5),dm);m.position.set(x,.5,z);m.castShadow=true;lobbyGroup.add(m);})();
+    [[-.8,-.6],[.8,-.6],[-.8,.6],[.8,.6]].forEach(([dx,dz])=>{
+      (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.1,.95,.1),dm);m.position.set(x+dx,-.025,z+dz);lobbyGroup.add(m);})();
+    });
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.8,.08,.8),cm);m.position.set(cx,.3,z+1.2);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,.8,6),new THREE.MeshStandardMaterial({color:0x999999}));m.position.set(cx,-.1,z+1.2);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(.3,.35,.06,8),new THREE.MeshStandardMaterial({color:0x999999}));m.position.set(cx,-.47,z+1.2);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.8,.45,.08),cm);m.position.set(cx,.55,z+1.55);lobbyGroup.add(m);})();
+    (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.8,.5,.05),new THREE.MeshStandardMaterial({color:0x222222,emissive:0x334466,emissiveIntensity:.2}));m.position.set(x,.8,z-.5);lobbyGroup.add(m);})();
+    officeDesks.push({x,z,cx,occupied:false});
+    addObs(x-1,x+1,z-.75,z+.75);
+  }
+  // Benches
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(4,.3,1.5),new THREE.MeshStandardMaterial({color:0xf0e8e0}));m.position.set(-13,-.2,7);lobbyGroup.add(m);})();
+  (()=>{const l=createLabel('💕 相亲角','#e08080',.8);l.position.set(-13,.5,7);lobbyGroup.add(l);})();
+  (()=>{const m=new THREE.Mesh(new THREE.BoxGeometry(4,.3,1.5),new THREE.MeshStandardMaterial({color:0xe8e8f0}));m.position.set(13,-.2,7);lobbyGroup.add(m);})();
+  (()=>{const l=createLabel('📋 事务处','#5577aa',.8);l.position.set(13,.5,7);lobbyGroup.add(l);})();
+  // Decorative
+  am(new THREE.BoxGeometry(4,.04,3),new THREE.MeshStandardMaterial({color:0x6688aa,roughness:.9}),0,-.48,4);
+  (()=>{const m=new THREE.Mesh(new THREE.TorusGeometry(.3,.025,12,24),new THREE.MeshStandardMaterial({color:0x8b7355}));m.position.set(-6,5.5,-11.9);lobbyGroup.add(m);})();
+  am(new THREE.CircleGeometry(.27,16),new THREE.MeshStandardMaterial({color:0xfffff8}),-6,5.5,-11.85);
+  am(new THREE.BoxGeometry(3,2,.05),new THREE.MeshStandardMaterial({color:0xd4c9a8,roughness:.9}),6,2.8,-11.9);
+  for(const p of[{x:-10,z:9},{x:10,z:9}]){
+    am(new THREE.CylinderGeometry(.25,.2,.35,8),new THREE.MeshStandardMaterial({color:0xa09080}),p.x,-.3,p.z);
+    for(let j=0;j<4;j++)am(new THREE.PlaneGeometry(.12,.25),new THREE.MeshStandardMaterial({color:0x66aa55,side:THREE.DoubleSide,opacity:.8,transparent:true}),p.x+(Math.random()-.5)*.25,-.05+j*.1,p.z+(Math.random()-.5)*.25);
+  }
+  // Floor tiles
+  for(let x=-13;x<14;x+=3)am(new THREE.BoxGeometry(.01,.001,22),new THREE.MeshStandardMaterial({color:0xddd8d0,transparent:true,opacity:.3}),x,-.49,-1);
+  for(let z=-11;z<10;z+=3)am(new THREE.BoxGeometry(28,.001,.01),new THREE.MeshStandardMaterial({color:0xddd8d0,transparent:true,opacity:.3}),0,-.49,z);
+  // Reception
+  am(new THREE.BoxGeometry(2.5,.15,1.2),new THREE.MeshStandardMaterial({color:0xc8b8a8,roughness:.5}),0,.5,6);
+  [[-1.1,.4],[1.1,.4],[-1.1,-.4],[1.1,-.4]].forEach(([dx,dz])=>am(new THREE.BoxGeometry(.08,.5,.08),new THREE.MeshStandardMaterial({color:0xc8b8a8,roughness:.5}),dx,.25,6+dz));
+  (()=>{const l=createLabel('📋 前台接待','#888',.7);l.position.set(0,1,6);lobbyGroup.add(l);})();
+  addObs(-1.3,1.3,5.4,6.6);
+  addObs(-14.5,-13.5,-12.5,9.5);addObs(13.5,14.5,-12.5,9.5);
+  addObs(-14,-3,-13,-12);addObs(5,14,-13,-12);addObs(-14,14,9.5,10.5);
+  for(const rz of[-5.5,-.5,4.5]){addObs(-10.2,-9.8,rz-2,rz+2);addObs(9.8,10.2,rz-2,rz+2);}
+}
+
+// ===== Worker Types =====
+const WORKER_TYPES = [
+  {name:'断头鬼',desc:'头放桌上手在键盘飞舞',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,.9,8), new THREE.MeshStandardMaterial({color:0x3366cc}));
+      body.position.y=.45; g.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(.18,8,8), new THREE.MeshStandardMaterial({color:0x5599ff}));
+      head.position.set(.5,.7,-.3); g.add(head);
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(.03,6,6), new THREE.MeshStandardMaterial({color:0x00cc00,emissive:0x00cc00,emissiveIntensity:.5}));
+      eye.position.set(.5,.75,-.2); g.add(eye);
+      const noodle = new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.12,8), new THREE.MeshStandardMaterial({color:0xff8800}));
+      noodle.position.set(-.3,.6,.2); g.add(noodle);
+      return {head,body,noodle,type:'headless'};
+    },
+    anim:(w,t)=>{w.parts.head.position.y=.7+Math.sin(t*2)*.02;w.parts.head.rotation.y=Math.sin(t*.5)*.3;w.parts.noodle.rotation.z=Math.sin(t*3)*.1;}
+  },
+  {name:'无臂鬼',desc:'没有胳膊用脚玩手机',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,.9,8), new THREE.MeshStandardMaterial({color:0xcc4466}));
+      body.position.y=.45; g.add(body);
+      [-1,1].forEach(dir=>{(()=>{const __m=new THREE.Mesh(new THREE.SphereGeometry(.08,6,6), new THREE.MeshStandardMaterial({color:0x662222}));__m.position.set(dir*.35,.6,0);g.add(__m);return __m;})();});
+      const phone = new THREE.Mesh(new THREE.BoxGeometry(.1,.15,.02), new THREE.MeshStandardMaterial({color:0x111111,emissive:0x4466ff,emissiveIntensity:.4}));
+      phone.position.set(0,.15,.3); phone.rotation.x=-.3; g.add(phone);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.6,6), new THREE.MeshStandardMaterial({color:0xcc4466}));
+      leg.position.set(.2,.6,.4); leg.rotation.x=-1.2; g.add(leg);
+      return {body,phone,leg,type:'noarms'};
+    },
+    anim:(w,t)=>{w.parts.phone.material.emissiveIntensity=.2+Math.sin(t*5)*.2;w.parts.leg.rotation.x=-1.2+Math.sin(t*1.5)*.1;}
+  },
+  {name:'透明鬼',desc:'半透明身体文件穿身而过',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,.9,8), new THREE.MeshStandardMaterial({color:0x44aa66}));
+      body.position.y=.45; g.add(body);
+      const paper = new THREE.Mesh(new THREE.PlaneGeometry(.3,.4), new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.8,side:THREE.DoubleSide}));
+      paper.position.set(.3,.8,0); g.add(paper);
+      return {body,paper,type:'transparent'};
+    },
+    anim:(w,t)=>{w.parts.body.material.opacity=.7+Math.sin(t*2)*.15;w.parts.paper.position.y=.8+Math.sin(t*1.5)*.1;w.parts.paper.rotation.y=t*.5;}
+  },
+  {name:'烧焦鬼',desc:'全身焦黑还在冒烟',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,.9,8), new THREE.MeshStandardMaterial({color:0x333333,roughness:1,emissive:0x331100,emissiveIntensity:.05}));
+      body.position.y=.45; g.add(body);
+      const smokeGeo = new THREE.BufferGeometry();
+      const smokePos = new Float32Array(20*3);
+      for(let i=0;i<20;i++){smokePos[i*3]=(Math.random()-.5)*.3;smokePos[i*3+1]=.8+Math.random()*.5;smokePos[i*3+2]=(Math.random()-.5)*.3;}
+      smokeGeo.setAttribute('position',new THREE.BufferAttribute(smokePos,3));
+      const smoke = new THREE.Points(smokeGeo, new THREE.PointsMaterial({color:0x888888,size:.05,transparent:true,opacity:.2,blending:THREE.AdditiveBlending}));
+      g.add(smoke); return {body,smoke,type:'burnt'};
+    },
+    anim:(w,t)=>{w.parts.body.material.emissiveIntensity=.03+Math.sin(t*3)*.03;const pos=w.parts.smoke.geometry.attributes.position.array;for(let i=0;i<20;i++){pos[i*3+1]+=.005;if(pos[i*3+1]>1.5)pos[i*3+1]=.8;}w.parts.smoke.geometry.attributes.position.needsUpdate=true;}
+  },
+  {name:'水鬼',desc:'浑身滴水地上有水滩',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,.9,8), new THREE.MeshStandardMaterial({color:0x2266aa}));
+      body.position.y=.45; g.add(body);
+      const puddle = new THREE.Mesh(new THREE.CircleGeometry(.6,16), new THREE.MeshStandardMaterial({color:0x2266aa,transparent:true,opacity:.4,side:THREE.DoubleSide}));
+      puddle.rotation.x=-Math.PI/2; puddle.position.y=-.48; g.add(puddle);
+      const drop = new THREE.Mesh(new THREE.SphereGeometry(.02,6,6), new THREE.MeshStandardMaterial({color:0x88ccff,transparent:true,opacity:.5}));
+      drop.position.set(0,.1,.2); g.add(drop); return {body,puddle,drop,type:'drowned'};
+    },
+    anim:(w,t)=>{w.parts.drop.position.y=.1+Math.sin(t*4)*.05;w.parts.puddle.scale.setScalar(1+Math.sin(t*2)*.1);}
+  },
+  {name:'纸人鬼',desc:'扁平如纸被风吹动',
+    build:(g)=>{
+      const body = new THREE.Mesh(new THREE.PlaneGeometry(.5,.9), new THREE.MeshStandardMaterial({color:0xccaa88,side:THREE.DoubleSide}));
+      body.position.y=.45; g.add(body);
+      const eye = new THREE.Mesh(new THREE.CircleGeometry(.03,8), new THREE.MeshStandardMaterial({color:0x332211}));
+      eye.position.set(-.1,.55,.01); g.add(eye);
+      const eye2 = eye.clone(); eye2.position.set(.1,.55,.01); g.add(eye2);
+      const mouth = new THREE.Mesh(new THREE.BoxGeometry(.1,.02,.01), new THREE.MeshStandardMaterial({color:0x332211}));
+      mouth.position.set(0,.4,.01); g.add(mouth); return {body,type:'paper'};
+    },
+    anim:(w,t)=>{w.parts.body.rotation.y=Math.sin(t*.8)*.3;w.parts.body.rotation.z=Math.sin(t*1.2)*.1;}
+  },
+];
+
+const WORKER_COLORS=[0x6688cc,0x88bb66,0xcc8866,0xcc6688,0x66ccbb,0xbb88cc,0xccaa88,0x8899cc,0x99cc88,0xcc9988];
+
+function lightColor(hex,amt=.35){const c=new THREE.Color(hex);c.lerp(new THREE.Color(0xffffff),amt);return c.getHex();}
+
+function buildSittingWorker(g,color){
+  const bm=new THREE.MeshStandardMaterial({color,roughness:.7});
+  const hm=new THREE.MeshStandardMaterial({color:lightColor(color),roughness:.6});
+  const am=new THREE.MeshStandardMaterial({color:lightColor(color,.15),roughness:.7});
+  const S=2;
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.2*S,.26*S,.38*S,8),bm);
+  torso.position.y=.19*S;g.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.15*S,8,8),hm);
+  head.position.set(0,.44*S,0);g.add(head);
+  const em=new THREE.MeshStandardMaterial({color:0x222222});
+  [-.05*S,.05*S].forEach(dx=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.018*S,6,6),em);e.position.set(dx,.46*S,.13*S);g.add(e);});
+  [-1,1].forEach(dir=>{
+    const a=new THREE.Mesh(new THREE.CylinderGeometry(.022*S,.028*S,.25*S,6),am);
+    a.position.set(dir*.23*S,.23*S,-.08*S);a.rotation.z=dir*.6;a.rotation.x=.5;g.add(a);
+  });
+  const bubble=document.createElement('div');
+  bubble.className='whisper-bubble';
+  const texts=['正在填写生死簿...','这份档案好难批...','想摸鱼...','这个灵魂太能狡辩了...','今天第99个...','孟婆汤又不够了...','轮回门要检修了...','旁边那鬼又偷看...'];
+  bubble.innerHTML=`<div class="wb-text">${texts[Math.floor(Math.random()*texts.length)]}</div>`;
+  return{bubble,torso,head};
+}
+
+function buildSofaSitter(g,color,isLeft){
+  const bm=new THREE.MeshStandardMaterial({color,roughness:.7});
+  const hm=new THREE.MeshStandardMaterial({color:lightColor(color),roughness:.6});
+  const S=2;
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.22*S,.28*S,.35*S,8),bm);
+  torso.position.y=.17*S;g.add(torso);
+  torso.rotation.x=isLeft?.1:-.1;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.16*S,8,8),hm);
+  head.position.set(isLeft?.05*S:-.05*S,.4*S,0);g.add(head);
+  const em=new THREE.MeshStandardMaterial({color:0x222222});
+  [-.05*S,.05*S].forEach(dx=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.02*S,6,6),em);e.position.set(dx,.42*S,isLeft?.12*S:-.12*S);g.add(e);});
+  const leg=new THREE.Mesh(new THREE.CylinderGeometry(.04*S,.04*S,.25*S,6),bm);
+  leg.position.set(0,.06*S,.2*S);leg.rotation.x=-.5;g.add(leg);
+  const bubble=document.createElement('div');
+  bubble.className='whisper-bubble';
+  const texts=['这判官真有意思...','什么时候轮到我...','听说这里的孟婆汤不错...','我在下面也是坐办公室...','下辈子想当猫...','相亲角有人吗？'];
+  bubble.innerHTML=`<div class="wb-text">${texts[Math.floor(Math.random()*texts.length)]}</div>`;
+  return{bubble};
+}
+
+function spawnOfficeWorkers() {
+  officeWorkers.forEach(w=>{if(w.group)lobbyGroup.remove(w.group);});
+  officeWorkers.length=0;
+  // Workers at desks
+  for(const desk of officeDesks){
+    const color=WORKER_COLORS[Math.floor(Math.random()*WORKER_COLORS.length)];
+    const g=new THREE.Group();
+    g.position.set(desk.cx||desk.x,.35,desk.z+1.2);
+    g.scale.set(.85,.85,.85);
+    // Face workers toward corridor
+    if(desk.x>0)g.rotation.y=Math.PI/2;
+    else g.rotation.y=-Math.PI/2;
+    const parts=buildSittingWorker(g,color);
+    const label=new CSS2DObject(parts.bubble);label.position.set(0,1.7,0);g.add(label);
+    lobbyGroup.add(g);
+    officeWorkers.push({group:g,parts,type:'sitting',label,bubble:parts.bubble,desk,phase:Math.random()*100,state:'working',stateTimer:Math.random()*8});
+    desk.occupied=true;
+  }
+  // Sofa sitters
+  const sofaPositions=[
+    {x:-13.8,z:7,left:true},{x:-13,z:7,left:true},{x:-12.2,z:7,left:true},
+    {x:12.2,z:7,left:false},{x:13,z:7,left:false},{x:13.8,z:7,left:false}
+  ];
+  for(const sp of sofaPositions){
+    const color=WORKER_COLORS[Math.floor(Math.random()*WORKER_COLORS.length)];
+    const g=new THREE.Group();
+    g.position.set(sp.x,-.05,sp.z);
+    const parts=buildSofaSitter(g,color,sp.left);
+    const label=new CSS2DObject(parts.bubble);label.position.set(0,1.4,0);g.add(label);
+    lobbyGroup.add(g);
+    officeWorkers.push({group:g,parts,type:'sofa',label,bubble:parts.bubble,desk:null,phase:Math.random()*100,state:'waiting',stateTimer:Math.random()*8});
+  }
+}
+
+function decorateLobby(){}
+
+// ===== Build Trial Room =====
+const trialHoles = [];
+const audienceSouls = [];
+
+function buildTrialRoom() {
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(30,30), new THREE.MeshStandardMaterial({color:0xd8d4ce,roughness:.9}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.5; floor.receiveShadow=true; trialGroup.add(floor);
+
+  // Platform (raised stage for judge)
+  const platform = new THREE.Mesh(new THREE.BoxGeometry(8,.6,4), new THREE.MeshStandardMaterial({color:0xc0b8a8,roughness:.7}));
+  platform.position.set(0,-.2,-6); platform.receiveShadow=true; platform.castShadow=true; trialGroup.add(platform);
+
+  // Platform steps
+  const step1 = new THREE.Mesh(new THREE.BoxGeometry(6,.2,.5), new THREE.MeshStandardMaterial({color:0xb0a898}));
+  step1.position.set(0,-.2,-3.8); trialGroup.add(step1);
+
+  // Dragon Chair (throne)
+  const chairMat = new THREE.MeshStandardMaterial({color:0x8b0000,roughness:.4,metalness:.3});
+  const throneBase = new THREE.Mesh(new THREE.BoxGeometry(1.5,.4,1.5), chairMat);
+  throneBase.position.set(0,.1,-6); trialGroup.add(throneBase);
+  const throneSeat = new THREE.Mesh(new THREE.BoxGeometry(1.2,.15,1.2), new THREE.MeshStandardMaterial({color:0x660000}));
+  throneSeat.position.set(0,.38,-6); trialGroup.add(throneSeat);
+  const throneBack = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.5,.15), chairMat);
+  throneBack.position.set(0,1,-6.7); trialGroup.add(throneBack);
+  // Dragon head on throne
+  const dragonHead = new THREE.Mesh(new THREE.SphereGeometry(.25,8,8), new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,emissiveIntensity:.2}));
+  dragonHead.position.set(0,1.6,-6.7); dragonHead.scale.set(1.2,.8,1); trialGroup.add(dragonHead);
+  // Armrests
+  [-1,1].forEach(dir=>{
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(.15,.6,.8), chairMat);
+    arm.position.set(dir*.55,.6,-6); trialGroup.add(arm);
+    const dragon = new THREE.Mesh(new THREE.SphereGeometry(.12,6,6), new THREE.MeshStandardMaterial({color:0xffd700}));
+    dragon.position.set(dir*.55,.95,-6.3); trialGroup.add(dragon);
+  });
+
+  // Desk on platform
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(3,.15,1.5), new THREE.MeshStandardMaterial({color:0x8b4513,roughness:.6}));
+  desk.position.set(0,.5,-5.5); desk.castShadow=true; trialGroup.add(desk);
+  // Desk legs
+  [[-1.3,.6],[1.3,.6],[-1.3,-.6],[1.3,-.6]].forEach(([x,z])=>{
+    (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.1,.95,.1), new THREE.MeshStandardMaterial({color:0x6b3410}));__m.position.set(x,-.025,-5.5+z);trialGroup.add(__m);return __m;})();
+  });
+
+  // 6 Doors (轮回门) in FRONT of the room
+  const doorWidth = 2.5, doorHeight = 3.5, gap = 0.5;
+  const totalWidth = 6*doorWidth + 5*gap;
+  const startX = -totalWidth/2 + doorWidth/2;
+
+  PATHS.forEach((path, i) => {
+    const x = startX + i*(doorWidth+gap);
+    const z = 8; // Front of room
+
+    // Door frame
+    const frameMat = new THREE.MeshStandardMaterial({color:0x4a3c2a,roughness:.8});
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(doorWidth+.3, doorHeight+.3, .4), frameMat);
+    frame.position.set(x, doorHeight/2-.5, z); trialGroup.add(frame);
+
+    // Door panel
+    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(doorWidth-.2, doorHeight-.2, .2),
+      new THREE.MeshStandardMaterial({color:0x2a1a0a,roughness:.6,emissive:path.color,emissiveIntensity:.05}));
+    doorPanel.position.set(x, doorHeight/2-.5, z); trialGroup.add(doorPanel);
+
+    // Door glow
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(doorWidth-.5, doorHeight-.5),
+      new THREE.MeshStandardMaterial({color:path.color,emissive:path.color,emissiveIntensity:.3,transparent:true,opacity:.3,side:THREE.DoubleSide}));
+    glow.position.set(x, doorHeight/2-.5, z+.15); trialGroup.add(glow);
+
+    // Door label: 3D CanvasTexture plate above door (always visible in trial)
+    const cvs = document.createElement('canvas');
+    cvs.width = 256; cvs.height = 96;
+    const ctx = cvs.getContext('2d');
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    ctx.font = 'bold 52px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 10;
+    const hex = new THREE.Color(path.color).getHexString();
+    const name = `${path.icon} ${path.id}`;
+    const boxW = 190;
+    const px = (cvs.width - boxW)/2;
+    ctx.fillStyle = `#${hex}`;
+    ctx.beginPath();
+    ctx.roundRect(px, 6, boxW, 84, 16);
+    ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(name, cvs.width/2, 48);
+    const tex = new THREE.CanvasTexture(cvs);
+    tex.colorSpace = THREE.SRGBColorSpace || undefined;
+    const labelMat = new THREE.MeshBasicMaterial({map:tex, transparent:true, depthTest:false, side:THREE.DoubleSide});
+    const labelPlane = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.0), labelMat);
+    labelPlane.position.set(x, doorHeight+0.9, z+.15);
+    labelPlane.rotation.y = Math.PI;
+    labelPlane.renderOrder = 999;
+    trialGroup.add(labelPlane);
+
+    // Click target (invisible box in front of door)
+    const clickTarget = new THREE.Mesh(new THREE.BoxGeometry(doorWidth, doorHeight, .5),
+      new THREE.MeshStandardMaterial({color:path.color,transparent:true,opacity:.01}));
+    clickTarget.position.set(x, doorHeight/2-.5, z+.5);
+    clickTarget.userData = {type:'door',pathIdx:i};
+    trialGroup.add(clickTarget);
+
+    // Point light above door
+    const pl = new THREE.PointLight(path.color, .3, 5);
+    pl.position.set(x, doorHeight, z+1); trialGroup.add(pl);
+
+    trialHoles.push({group:doorPanel, glow, clickTarget, pLight:pl, data:path, hovered:false});
+  });
+
+  // Audience seats (sides)
+  for (let side=0; side<2; side++) {
+    const sx = side===0 ? -8 : 8;
+    for (let row=0; row<3; row++) {
+      for (let col=0; col<4; col++) {
+        const x = sx + (side===0?-1:1)*col*1.2;
+        const z = -1 + row*2.5;
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(.8,.1,.8), new THREE.MeshStandardMaterial({color:0xc0c0c0}));
+        seat.position.set(x,-.4,z); trialGroup.add(seat);
+      }
+    }
+  }
+
+  // Walls
+  const wallMat = new THREE.MeshStandardMaterial({color:0xe8e4de,roughness:.9});
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(30,12,1), wallMat);__m.position.set(0,5.5,-10);trialGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(1,12,20), wallMat);__m.position.set(-15,5.5,0);trialGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(1,12,20), wallMat);__m.position.set(15,5.5,0);trialGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.Mesh(new THREE.PlaneGeometry(30,20), new THREE.MeshStandardMaterial({color:0xffffff}));__m.position.set(0,11.5,0);trialGroup.add(__m);return __m;})().rotation.x=Math.PI/2;
+}
+
+// ===== Build Office =====
+function buildOffice() {
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0xe0dcd6,roughness:.9}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-0.5; floor.receiveShadow=true; officeGroup.add(floor);
+
+  const wallMat = new THREE.MeshStandardMaterial({color:0xf0eeea,roughness:.9});
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(20,10,.5), wallMat);__m.position.set(0,4.5,-10);officeGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.5,10,20), wallMat);__m.position.set(-10,4.5,0);officeGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.5,10,20), wallMat);__m.position.set(10,4.5,0);officeGroup.add(__m);return __m;})();
+
+  const deskMat = new THREE.MeshStandardMaterial({color:0xc8b8a8,roughness:.6});
+  const desk = new THREE.Mesh(new THREE.BoxGeometry(4,.15,2.5), deskMat);
+  desk.position.set(0,.5,-2); desk.castShadow=true; officeGroup.add(desk);
+  [[-1.8,-3.2],[1.8,-3.2],[-1.8,-.8],[1.8,-.8]].forEach(([x,z])=>{
+    (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.12,.95,.12), deskMat);__m.position.set(x,-.025,z);officeGroup.add(__m);return __m;})();
+  });
+
+  const chair = new THREE.Mesh(new THREE.BoxGeometry(1.2,.1,1.2), new THREE.MeshStandardMaterial({color:0xb8a898}));
+  chair.position.set(0,.3,1); chair.userData={type:'chair'}; officeGroup.add(chair);
+  const chairPole = new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.8,8), new THREE.MeshStandardMaterial({color:0x888888}));
+  chairPole.position.set(0,-.1,1); officeGroup.add(chairPole);
+  const chairBase = new THREE.Mesh(new THREE.CylinderGeometry(.35,.4,.06,8), new THREE.MeshStandardMaterial({color:0x888888}));
+  chairBase.position.set(0,-.47,1); officeGroup.add(chairBase);
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.1,.1), new THREE.MeshStandardMaterial({color:0xb8a898}));__m.position.set(0,.85,1.55);__m.userData={type:'chair'};officeGroup.add(__m);return __m;})();
+
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(2,4,1), new THREE.MeshStandardMaterial({color:0xd0d0d8}));__m.position.set(-6,1.5,-8);officeGroup.add(__m);return __m;})();
+  for(let i=0;i<4;i++){
+    (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(1.8,.8,.05), new THREE.MeshStandardMaterial({color:0xe0e0e8}));__m.position.set(-6,.2+i*.9,-7.45);officeGroup.add(__m);return __m;})();
+  }
+
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.3,5,3), new THREE.MeshStandardMaterial({color:0xc8b8a8}));__m.position.set(7,2,-8);officeGroup.add(__m);return __m;})();
+  for(let i=0;i<15;i++){
+    (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.2,.25+Math.random()*.15,.15), new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(Math.random(),.3,.6)}));__m.position.set(7.3,.3+(i%5)*.9,-9+Math.floor(i/5)*1.2);officeGroup.add(__m);return __m;})();
+  }
+
+  const lampBase = new THREE.Mesh(new THREE.CylinderGeometry(.15,.2,.1,8), new THREE.MeshStandardMaterial({color:0x888888,metalness:.5}));
+  lampBase.position.set(-1.5,.55,-2); officeGroup.add(lampBase);
+  (()=>{const __m=new THREE.Mesh(new THREE.ConeGeometry(.25,.3,8,1,true), new THREE.MeshStandardMaterial({color:0xd0c8b8,transparent:true,opacity:.8,side:THREE.DoubleSide}));__m.position.set(-1.5,.75,-2);officeGroup.add(__m);return __m;})();
+  (()=>{const __m=new THREE.PointLight(0xffeedd,.3,5);__m.position.set(-1.5,.6,-2);officeGroup.add(__m);return __m;})();
+
+  (()=>{const __m=new THREE.Mesh(new THREE.BoxGeometry(.8,.1,.8), new THREE.MeshStandardMaterial({color:0xa8a8a8}));__m.position.set(0,.3,2);officeGroup.add(__m);return __m;})();
+
+  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(2.5,4,.3), new THREE.MeshStandardMaterial({color:0x4a3c2a}));
+  doorFrame.position.set(0,1.5,9.8); officeGroup.add(doorFrame);
+  const door = new THREE.Mesh(new THREE.BoxGeometry(1.8,3.2,.05), new THREE.MeshStandardMaterial({color:0xc8c0b8}));
+  door.position.set(0,1.5,9.95); door.userData={type:'door',target:'lobby'}; officeGroup.add(door);
+  const doorHandle = new THREE.Mesh(new THREE.SphereGeometry(.08,6,6), new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffd700,emissiveIntensity:.15}));
+  doorHandle.position.set(0,1.5,10.05); officeGroup.add(doorHandle);
+  (()=>{const l=createLabel('🚪 返回大厅','#888',.7);l.position.set(0,3.8,9.8);officeGroup.add(l);})();
+}
+
+// ===== Soul Model =====
+function createHumanoidSoul(color=0x88aaff, variant=0, pathIdx=1, soulData=null) {
+  const g = new THREE.Group();
+  const c = new THREE.Color(color);
+  const matBody = new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.06,roughness:.45,metalness:.05});
+  const matDark = new THREE.MeshStandardMaterial({color:c.clone().multiplyScalar(.62),emissive:color,emissiveIntensity:.03,roughness:.5,metalness:.05});
+  const matLight = new THREE.MeshStandardMaterial({color:c.clone().multiplyScalar(1.35),emissive:color,emissiveIntensity:.04,roughness:.45,metalness:.05});
+  const matSkin = new THREE.MeshStandardMaterial({color:0xffe6cf,roughness:.6,metalness:0});
+  const matHair = new THREE.MeshStandardMaterial({color:0x40332a,roughness:.8,metalness:0});
+  const matShoe = new THREE.MeshStandardMaterial({color:0x8a5a3a,roughness:.55,metalness:.05});
+
+  const shapes = [
+    {headR:.24,bodyW:.30,bodyH:.52,legW:.11,legH:.42,armW:.08,armH:.42,shoulderW:.34},
+    {headR:.22,bodyW:.34,bodyH:.48,legW:.12,legH:.40,armW:.09,armH:.40,shoulderW:.37},
+    {headR:.26,bodyW:.28,bodyH:.56,legW:.10,legH:.44,armW:.075,armH:.44,shoulderW:.32},
+    {headR:.21,bodyW:.32,bodyH:.46,legW:.11,legH:.38,armW:.085,armH:.38,shoulderW:.35},
+    {headR:.25,bodyW:.36,bodyH:.50,legW:.13,legH:.42,armW:.095,armH:.42,shoulderW:.38},
+    {headR:.20,bodyW:.26,bodyH:.54,legW:.095,legH:.46,armW:.07,armH:.46,shoulderW:.30},
+  ];
+  const s = Object.assign({}, shapes[variant % shapes.length]);
+  const HEIGHT_SCALE=2;
+  for(const k in s){s[k]*=HEIGHT_SCALE;}
+
+  // ===== HEAD =====
+  const headGroup = new THREE.Group();
+  const head = new THREE.Mesh(new THREE.SphereGeometry(s.headR,20,18), matSkin);
+  head.scale.set(1,1.14,.96); headGroup.add(head);
+
+  const hairCap=new THREE.Mesh(new THREE.SphereGeometry(s.headR*1.06,20,10,0,Math.PI*2,0,Math.PI*.52), matHair);
+  hairCap.scale.set(1,1.08,.98); hairCap.position.set(0,s.headR*.1,-s.headR*.04); headGroup.add(hairCap);
+  const fringe=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.42,14,10), matHair);
+  fringe.position.set(0,s.headR*.62,s.headR*.58); fringe.scale.set(1.5,.5,1); fringe.rotation.x=.18; headGroup.add(fringe);
+
+  const eyeWhiteMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.25,metalness:0});
+  const pupilMat=new THREE.MeshStandardMaterial({color:0x262626,roughness:.3,metalness:0});
+  const eyeOff=s.headR*.26;
+  const eyes=[];
+  [[-eyeOff,s.headR*.14,s.headR*.78],[eyeOff,s.headR*.14,s.headR*.78]].forEach(([x,y,z])=>{
+    const white=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.15,14,12), eyeWhiteMat);
+    white.position.set(x,y,z); white.scale.set(.9,1.18,.5); headGroup.add(white);
+    const pupil=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.08,12,10), pupilMat);
+    pupil.position.set(x,y-s.headR*.01,z+s.headR*.07); headGroup.add(pupil);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.03,8,8), eyeWhiteMat);
+    shine.position.set(x+s.headR*.02,y+s.headR*.035,z+s.headR*.1); headGroup.add(shine);
+    eyes.push({white,pupil});
+  });
+
+  const browMat=new THREE.MeshStandardMaterial({color:0x2b2018,roughness:.8,metalness:0});
+  [[-eyeOff,s.headR*.42,s.headR*.76],[eyeOff,s.headR*.42,s.headR*.76]].forEach(([x,y,z])=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(s.headR*.17,s.headR*.035,s.headR*.05), browMat);
+    b.position.set(x,y,z); b.rotation.z=x<0?-.12:.12; headGroup.add(b);
+  });
+
+  const nose=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.05,10,8), matSkin.clone());
+  nose.material.color.multiplyScalar(.92); nose.position.set(0,-s.headR*.03,s.headR*.95); nose.scale.set(.8,1,.5); headGroup.add(nose);
+
+  const mouthMat=new THREE.MeshStandardMaterial({color:0x9a3b35,roughness:.5,metalness:0});
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(s.headR*.11,s.headR*.03,8,14), mouthMat);
+  mouth.position.set(0,-s.headR*.28,s.headR*.88); mouth.rotation.x=.3; mouth.scale.y=.55; headGroup.add(mouth);
+
+  const blushMat=new THREE.MeshStandardMaterial({color:0xffa09a,roughness:.6,metalness:0});
+  [[-eyeOff*1.25,-s.headR*.05,s.headR*.78],[eyeOff*1.25,-s.headR*.05,s.headR*.78]].forEach(([x,y,z])=>{
+    const blush=new THREE.Mesh(new THREE.SphereGeometry(s.headR*.1,12,10), blushMat);
+    blush.position.set(x,y,z); blush.scale.set(1.2,.55,.35); headGroup.add(blush);
+  });
+
+  headGroup.position.y=s.bodyH+s.legH+s.headR*.85; g.add(headGroup);
+  const chin=headGroup;
+
+  // neck
+  const neckMat=matBody.clone();
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(s.headR*.2,s.headR*.26,s.headR*.22,12), neckMat);
+  neck.position.set(0,s.bodyH+s.legH+s.headR*.26,0); g.add(neck);
+
+  // ===== BODY (rounded capsule torso) =====
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(s.shoulderW*.4,s.bodyH*.42,8,14), matBody);
+  body.position.y=s.legH+s.bodyH*.5; body.scale.set(1,1,.88); g.add(body);
+
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(s.bodyW*.3,14,12), matLight);
+  belly.position.set(0,s.legH+s.bodyH*.42,s.bodyW*.22); belly.scale.set(1.15,.75,.55); g.add(belly);
+
+  // ===== ROBE (flared tunic, solid) =====
+  const rw=s.bodyW*.55, rh=s.bodyH*.85;
+  const robePts=[
+    new THREE.Vector2(0,rh*.6),
+    new THREE.Vector2(rw*.42,rh*.52),
+    new THREE.Vector2(rw*.8,rh*.3),
+    new THREE.Vector2(rw*1.02,0),
+    new THREE.Vector2(rw*1.12,-rh*.28),
+    new THREE.Vector2(rw*1.14,-rh*.34),
+  ];
+  const robe=new THREE.Mesh(new THREE.LatheGeometry(robePts,16), matDark);
+  robe.position.y=s.legH+s.bodyH*.1; g.add(robe);
+  robe.material.side=THREE.DoubleSide;
+
+  const belt=new THREE.Mesh(new THREE.TorusGeometry(s.bodyW*.42,s.bodyW*.07,8,18), matLight);
+  belt.position.set(0,s.legH+s.bodyH*.3,s.bodyW*.08); belt.rotation.x=Math.PI/2; g.add(belt);
+
+  // ===== ARMS =====
+  const arms=[];
+  [-1,1].forEach(dir=>{
+    const armGroup=new THREE.Group();
+    const shoulder=new THREE.Mesh(new THREE.SphereGeometry(s.armW*1.4,10,8), matBody);
+    shoulder.position.y=-s.armH*.05; shoulder.scale.set(.8,1.1,.8); armGroup.add(shoulder);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(s.armW*.7,s.armH*.5,6,10), matBody);
+    upper.position.y=-s.armH*.3; armGroup.add(upper);
+    const foreArm=new THREE.Mesh(new THREE.CapsuleGeometry(s.armW*.58,s.armH*.48,6,10), matDark);
+    foreArm.position.y=-s.armH*.72; armGroup.add(foreArm);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(s.armW*.62,10,8), matSkin);
+    hand.position.set(0,-s.armH*.98,0); hand.scale.set(.9,1.15,.8); armGroup.add(hand);
+    armGroup.position.set(dir*s.shoulderW*.5,s.legH+s.bodyH*.88,0); armGroup.rotation.z=dir*.15; g.add(armGroup); arms.push(armGroup);
+  });
+
+  // ===== LEGS =====
+  const legs=[];
+  [-1,1].forEach(dir=>{
+    const legGroup=new THREE.Group();
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(s.legW*.72,s.legH*.66,6,10), matSkin);
+    leg.position.y=s.legH*.55; legGroup.add(leg);
+    const shoe=new THREE.Mesh(new THREE.BoxGeometry(s.legW*1.5,s.legW*.45,s.legW*1.9), matShoe);
+    shoe.position.set(0,s.legW*.22,s.legW*.42); legGroup.add(shoe);
+    const sole=new THREE.Mesh(new THREE.BoxGeometry(s.legW*1.6,s.legW*.12,s.legW*2), matShoe.clone());
+    sole.material.color.multiplyScalar(.7); sole.position.set(0,0,s.legW*.42); legGroup.add(sole);
+    legGroup.position.set(dir*s.bodyW*.26,0,0); g.add(legGroup); legs.push(legGroup);
+  });
+
+  // ===== Path features (solid) =====
+  const pathFeatures=[];
+  if(pathIdx===0){
+    const haloMat=new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffd700,emissiveIntensity:.4,roughness:.4});
+    const halo=new THREE.Mesh(new THREE.TorusGeometry(s.headR*.85,s.headR*.07,10,20), haloMat);
+    halo.position.set(0,s.bodyH+s.legH+s.headR*1.4,0); halo.rotation.x=Math.PI/2; g.add(halo); pathFeatures.push(halo);
+  } else if(pathIdx===2){
+    const spikeMat=new THREE.MeshStandardMaterial({color:0xff7043,emissive:0xff7043,emissiveIntensity:.15,roughness:.5});
+    [-1,1].forEach(dir=>{const spike=new THREE.Mesh(new THREE.ConeGeometry(s.headR*.1,s.headR*.24,8),spikeMat);spike.position.set(dir*s.shoulderW*.62,s.legH+s.bodyH*.98,0);spike.rotation.z=dir*.3;g.add(spike);pathFeatures.push(spike);});
+  } else if(pathIdx===3){
+    [-1,1].forEach(dir=>{const ear=new THREE.Mesh(new THREE.ConeGeometry(s.headR*.07,s.headR*.22,8),matSkin);ear.position.set(dir*s.headR*.6,s.bodyH+s.legH+s.headR*1.05,0);ear.rotation.z=dir*.4;ear.rotation.x=.2;g.add(ear);pathFeatures.push(ear);});
+  } else if(pathIdx===4){
+    arms.forEach(a=>{a.scale.set(.82,1.35,.82);});
+  } else if(pathIdx===5){
+    const hornMat=new THREE.MeshStandardMaterial({color:0x6e2b2b,emissive:0x9a3b3b,emissiveIntensity:.12,roughness:.5});
+    [-1,1].forEach(dir=>{const horn=new THREE.Mesh(new THREE.ConeGeometry(s.headR*.07,s.headR*.24,8),hornMat);horn.position.set(dir*s.headR*.32,s.bodyH+s.legH+s.headR*1.15,-s.headR*.05);horn.rotation.x=dir*.3;g.add(horn);pathFeatures.push(horn);});
+  }
+
+  if(soulData){
+    const hairColor=soulData.enemy?0x2c1a1a:soulData.friend?0x5a4a38:0x40332a;
+    const hairMat=new THREE.MeshStandardMaterial({color:hairColor,roughness:.8,metalness:0});
+    const hairCount=10+Math.floor(Math.random()*6);
+    for(let i=0;i<hairCount;i++){
+      const angle=(i/hairCount)*Math.PI*2;
+      const hair=new THREE.Mesh(new THREE.ConeGeometry(s.headR*.055,s.headR*.3+Math.random()*.16,6),hairMat);
+      hair.position.set(Math.cos(angle)*s.headR*.72,s.headR*.42,Math.sin(angle)*s.headR*.5);
+      hair.rotation.x=Math.sin(angle)*.55;hair.rotation.z=-Math.cos(angle)*.55;headGroup.add(hair);
+    }
+  }
+
+  const auraCount=25;
+  const auraGeo=new THREE.BufferGeometry();
+  const auraPos=new Float32Array(auraCount*3);
+  const auraData=[];
+  for(let i=0;i<auraCount;i++){
+    const angle=Math.random()*Math.PI*2, radius=.4+Math.random()*.5, height=(Math.random()-.5)*1.2;
+    auraPos[i*3]=Math.cos(angle)*radius; auraPos[i*3+1]=.8+height; auraPos[i*3+2]=Math.sin(angle)*radius;
+    auraData.push({angle,radius,height,speed:.5+Math.random()*1,phase:Math.random()*10});
+  }
+  auraGeo.setAttribute('position',new THREE.BufferAttribute(auraPos,3));
+  const auraMat=new THREE.PointsMaterial({color:color,size:.03,transparent:true,opacity:.5,blending:THREE.AdditiveBlending});
+  const auraPts=new THREE.Points(auraGeo,auraMat); g.add(auraPts);
+
+  const sizeScale=.85+Math.random()*.3; g.scale.set(sizeScale,sizeScale,sizeScale);
+
+  const bubbleDiv=document.createElement('div');
+  bubbleDiv.className='soul-bubble';
+  bubbleDiv.innerHTML='<div class="sb-text"></div><div class="sb-speaker"></div>';
+  bubbleDiv.style.display='none';
+  const bubbleObj=new CSS2DObject(bubbleDiv);
+  bubbleObj.position.set(0,s.bodyH+s.legH+s.headR*1.5,0); g.add(bubbleObj);
+
+  const sprite=null;
+  g.userData={head,headGroup,body,robe,neck,legs,arms,mouth,sprite,eyes,bubbleDiv,bubbleObj,auraPts,auraData,pathFeatures,nose,chin};
+  return g;
+}
+
+// ===== Player Model (Meangirl Judge) =====
+function createPlayerModel(){
+  const g=new THREE.Group();
+  const skin=new THREE.MeshStandardMaterial({color:0xffdcc0,roughness:.6,metalness:0});
+  const skinDark=new THREE.MeshStandardMaterial({color:0xefc7a8,roughness:.6,metalness:0});
+  const hair=new THREE.MeshStandardMaterial({color:0x5a2a3a,roughness:.75,metalness:0});
+  const hairShine=new THREE.MeshStandardMaterial({color:0x8a4a5a,roughness:.6,metalness:.05});
+  const dress=new THREE.MeshStandardMaterial({color:0xff6b8a,roughness:.5,metalness:.05});
+  const dressDark=new THREE.MeshStandardMaterial({color:0xd84a6a,roughness:.55,metalness:.05});
+  const gold=new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffd700,emissiveIntensity:.35,roughness:.35,metalness:.3});
+  const whiteMat=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.4,metalness:0});
+  const black=new THREE.MeshStandardMaterial({color:0x1a1a2a,roughness:.3,metalness:0});
+
+  const bodyH=.5, legH=.55, headR=.19, bodyW=.26, legW=.09, armW=.065, armH=.5, shoulderW=.32;
+
+  // ===== LEGS (long, dress-split) =====
+  const legs=[];
+  [-1,1].forEach(dir=>{
+    const legGroup=new THREE.Group();
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(legW*.75,legH*.75,8,10), skin);
+    leg.position.y=legH*.52; legGroup.add(leg);
+    const heel=new THREE.Mesh(new THREE.BoxGeometry(legW*1.5,legW*.5,legW*1.9), whiteMat);
+    heel.position.set(0,legW*.2,legW*.4); legGroup.add(heel);
+    const heelTip=new THREE.Mesh(new THREE.ConeGeometry(legW*.45,legW*1.3,8), gold);
+    heelTip.position.set(0,legW*.08,legW*.62); heelTip.rotation.x=Math.PI*.35; legGroup.add(heelTip);
+    legGroup.position.set(dir*bodyW*.28,0,0); g.add(legGroup); legs.push(legGroup);
+  });
+
+  // ===== DRESS (A-line skirt) =====
+  const skirtPts=[
+    new THREE.Vector2(bodyW*.3,.34),
+    new THREE.Vector2(bodyW*.5,.26),
+    new THREE.Vector2(bodyW*.68,.15),
+    new THREE.Vector2(bodyW*.76,.02),
+  ];
+  const skirt=new THREE.Mesh(new THREE.LatheGeometry(skirtPts,18), dress);
+  skirt.material.side=THREE.DoubleSide;
+  skirt.position.y=legH*.3; g.add(skirt);
+
+  // ===== TORSO (bodice) =====
+  const body=new THREE.Mesh(new THREE.CapsuleGeometry(bodyW*.45,bodyH*.5,8,14), dress);
+  body.position.y=legH+bodyH*.42; body.scale.set(1,1,.88); g.add(body);
+  const waist=new THREE.Mesh(new THREE.TorusGeometry(bodyW*.4,bodyW*.07,8,18), gold);
+  waist.position.set(0,legH+bodyH*.18,0); waist.rotation.x=Math.PI/2; g.add(waist);
+  const collar=new THREE.Mesh(new THREE.SphereGeometry(bodyW*.26,12,10), whiteMat);
+  collar.position.set(0,legH+bodyH*.62,bodyW*.18); collar.scale.set(1,.5,.4); g.add(collar);
+
+  // ===== ARMS (delicate) =====
+  const arms=[];
+  [-1,1].forEach(dir=>{
+    const armGroup=new THREE.Group();
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(armW*.7,armH*.5,6,10), skin);
+    upper.position.y=-armH*.28; armGroup.add(upper);
+    const glove=new THREE.Mesh(new THREE.CapsuleGeometry(armW*.58,armH*.45,6,10), whiteMat);
+    glove.position.y=-armH*.72; armGroup.add(glove);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(armW*.55,8,8), skin);
+    hand.position.set(0,-armH*.98,0); hand.scale.set(.9,1.15,.8); armGroup.add(hand);
+    armGroup.position.set(dir*shoulderW*.52,legH+bodyH*.86,0); armGroup.rotation.z=dir*.18; g.add(armGroup); arms.push(armGroup);
+    armGroup.userData.rest=dir*.18;
+  });
+
+  // ===== HEAD (long hair, beauty face) =====
+  const headGroup=new THREE.Group();
+  const head=new THREE.Mesh(new THREE.SphereGeometry(headR,20,18), skin);
+  head.scale.set(1,1.12,.95); headGroup.add(head);
+
+  // long hair back (layered)
+  const backHair=new THREE.Mesh(new THREE.SphereGeometry(headR*1.15,16,14,0,Math.PI*2,0,Math.PI*.6), hair);
+  backHair.scale.set(1,1.5,1); backHair.position.set(0,-headR*.15,-headR*.2); headGroup.add(backHair);
+  const hairTail=new THREE.Mesh(new THREE.CapsuleGeometry(headR*.5,bodyH*1.3,8,10), hair);
+  hairTail.position.set(0,-headR*1.2-bodyH*.8,-headR*.1); headGroup.add(hairTail);
+  const hairTail2=new THREE.Mesh(new THREE.CapsuleGeometry(headR*.42,bodyH*1.1,8,10), hairShine);
+  hairTail2.position.set(0,-headR*1.3-bodyH*.65,-headR*.05); headGroup.add(hairTail2);
+
+  // bangs
+  const bangs=new THREE.Mesh(new THREE.SphereGeometry(headR*1.02,16,12,0,Math.PI*2,0,Math.PI*.45), hair);
+  bangs.scale.set(1,.85,.95); bangs.position.set(0,headR*.15,headR*.05); headGroup.add(bangs);
+  // side locks
+  [-1,1].forEach(dir=>{
+    const lock=new THREE.Mesh(new THREE.CapsuleGeometry(headR*.16,bodyH*.9,6,8), hairShine);
+    lock.position.set(dir*headR*.85,-headR*1.2-bodyH*.55,0); lock.rotation.z=dir*.15; headGroup.add(lock);
+  });
+
+  // crown
+  const crown=new THREE.Mesh(new THREE.CylinderGeometry(headR*.35,headR*.5,headR*.28,10), gold);
+  crown.position.set(0,headR*1.15,-headR*.05); headGroup.add(crown);
+  const crownGem=new THREE.Mesh(new THREE.SphereGeometry(headR*.16,8,8), new THREE.MeshStandardMaterial({color:0xff4d6d,emissive:0xff4d6d,emissiveIntensity:.6}));
+  crownGem.position.set(0,headR*1.45,0); headGroup.add(crownGem);
+
+  // eyes (big anime eyes)
+  const eyeOff=headR*.26;
+  const eyes=[];
+  [[-eyeOff,headR*.12,headR*.8],[eyeOff,headR*.12,headR*.8]].forEach(([x,y,z])=>{
+    const white=new THREE.Mesh(new THREE.SphereGeometry(headR*.16,14,12), whiteMat);
+    white.position.set(x,y,z); white.scale.set(.9,1.2,.45); headGroup.add(white);
+    const iris=new THREE.Mesh(new THREE.SphereGeometry(headR*.09,12,10), new THREE.MeshStandardMaterial({color:0x8a2b4a,roughness:.3,metalness:.1}));
+    iris.position.set(x,y-headR*.005,z+headR*.075); headGroup.add(iris);
+    const pupil=new THREE.Mesh(new THREE.SphereGeometry(headR*.045,10,8), black);
+    pupil.position.set(x,y-headR*.005,z+headR*.1); headGroup.add(pupil);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(headR*.035,8,8), whiteMat);
+    shine.position.set(x+headR*.025,y+headR*.045,z+headR*.115); headGroup.add(shine);
+    const lash=new THREE.Mesh(new THREE.BoxGeometry(headR*.2,headR*.02,headR*.05), black);
+    lash.position.set(x,y+headR*.24,z+headR*.82); lash.rotation.z=x<0?-.15:.15; headGroup.add(lash);
+    eyes.push({white,iris,pupil});
+  });
+
+  // brows
+  [[-eyeOff,headR*.36,headR*.78],[eyeOff,headR*.36,headR*.78]].forEach(([x,y,z])=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(headR*.19,headR*.028,headR*.05), hair);
+    b.position.set(x,y,z); b.rotation.z=x<0?-.1:.1; headGroup.add(b);
+  });
+
+  // blush
+  [[-eyeOff*1.3,-headR*.06,headR*.8],[eyeOff*1.3,-headR*.06,headR*.8]].forEach(([x,y,z])=>{
+    const blush=new THREE.Mesh(new THREE.SphereGeometry(headR*.09,10,8), new THREE.MeshStandardMaterial({color:0xff9d9d,roughness:.6}));
+    blush.position.set(x,y,z); blush.scale.set(1.2,.5,.3); headGroup.add(blush);
+  });
+
+  // nose + mouth
+  const nose=new THREE.Mesh(new THREE.SphereGeometry(headR*.04,8,8), skinDark);
+  nose.position.set(0,-headR*.06,headR*.98); nose.scale.set(.7,.8,.5); headGroup.add(nose);
+  const mouth=new THREE.Mesh(new THREE.TorusGeometry(headR*.09,headR*.028,8,14), new THREE.MeshStandardMaterial({color:0xd8485a,roughness:.5}));
+  mouth.position.set(0,-headR*.24,headR*.9); mouth.rotation.x=.3; mouth.scale.y=.5; headGroup.add(mouth);
+
+  // earrings
+  [-1,1].forEach(dir=>{
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(headR*.07,headR*.018,6,10), gold);
+    ring.position.set(dir*headR*.98,-headR*.35,headR*.1); headGroup.add(ring);
+  });
+
+  headGroup.position.y=legH+bodyH+headR*.9; g.add(headGroup);
+
+  g.userData={legs,arms,headGroup,eyes};
+  return g;
+}
+
+// ===== Game State =====
+let gameState='lobby', currentDay=1, soulGroup=null, soulArrived=false, soulFloatPhase=0;
+let playerModel=null, playerPos=new THREE.Vector3(0,0,12), playerIsMoving=false;
+let currentSoul=null, soulDesire=0, soulArms=null, soulColor=0x88aaff;
+let askedQuestions=[], judgingMode=false, isAnimating=false, soulNumber=0;
+let totalScore=0, happyCount=0, skillUsedCount=0, harshCount=0;
+let friendCount=0, enemyCount=0, relationship=null;
+let soulSkillUseCount=0, autoTimer=0, autoIdx=0, autoTriggers=0;
+let soulMood='calm', mengpoUsed=false, comboCount=0, maxCombo=0;
+let fireEyesActive=false, activeSkill=0, skillUses=[3,2,1], skillEffects=[];
+let allSoulsQueue=[], soulIndex=0;
+let lobbySouls=[], lobbyTasks=[], couples=[], dayEndTasks=[];
+let audienceMembers=[], whisperTimer=0, loveProposals=[];
+let isPlaying=false;
+let pendingHelpTimers=[];
+let helpEventDone=false;
+
+const SAVE_KEY='babei_progress_v5';
+const TITLES=[{name:'实习判官',need:0},{name:'牛头马面',need:3},{name:'判官',need:10},{name:'轮回司主',need:25},{name:'十殿阎罗',need:50}];
+function loadProgress(){try{return JSON.parse(localStorage.getItem(SAVE_KEY))||{wishes:0,total冥币:0,balance:0,karmaBook:[]};}catch(e){return{wishes:0,total冥币:0,balance:0,karmaBook:[]};}}
+function saveProgress(p){localStorage.setItem(SAVE_KEY,JSON.stringify(p));}
+function getTitle(p){let t=TITLES[0];for(const ti of TITLES)if(p.wishes>=ti.need)t=ti;return t;}
+let PROGRESS=loadProgress();
+
+// ===== Scene Switch =====
+let savedLobbyPos=null;
+function switchScene(newScene){
+  // Save position when leaving lobby
+  if(currentScene===SCENES.LOBBY&&newScene!==SCENES.LOBBY){
+    savedLobbyPos={x:playerPos.x,z:playerPos.z,yaw,prev:newScene};
+  }
+  currentScene=newScene;
+  lobbyGroup.visible=newScene===SCENES.LOBBY;
+  trialGroup.visible=newScene===SCENES.TRIAL;
+  officeGroup.visible=newScene===SCENES.OFFICE;
+
+  document.getElementById('lobby-ui').classList.toggle('active',newScene===SCENES.LOBBY);
+  document.getElementById('trial-ui').style.display=newScene===SCENES.TRIAL?'block':'none';
+  document.getElementById('office-ui').classList.toggle('active',newScene===SCENES.OFFICE);
+
+  // Control CSS2D trial labels
+  document.querySelectorAll('.trial-label').forEach(el=>{
+    el.style.display = (newScene===SCENES.TRIAL)?'block':'none';
+  });
+
+  if(playerModel){
+    const visibleIn=scene;
+    if(newScene===SCENES.LOBBY){
+      playerModel.position.set(savedLobbyPos?playerPos.x:0, playerPos.y, savedLobbyPos?playerPos.z:-2);
+      if(savedLobbyPos&&savedLobbyPos.prev!==SCENES.LOBBY){
+        playerPos.x=savedLobbyPos.x;playerPos.z=savedLobbyPos.z;
+        yaw=savedLobbyPos.yaw; pitch=0;
+      } else {
+        playerPos.x=0;playerPos.z=-2;yaw=0;pitch=0;
+      }
+    } else if(newScene===SCENES.TRIAL){
+      playerPos.set(0,0,-6.2);yaw=Math.PI;pitch=0;
+    } else if(newScene===SCENES.OFFICE){
+      playerPos.set(0,0,8);yaw=0;pitch=0;
+    }
+    playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);
+    playerModel.rotation.y=yaw;
+  } else {
+    if(newScene===SCENES.LOBBY){
+      if(savedLobbyPos&&savedLobbyPos.prev!==SCENES.LOBBY){
+        playerPos.set(savedLobbyPos.x,playerPos.y,savedLobbyPos.z);
+        yaw=savedLobbyPos.yaw; pitch=0;
+      } else {
+        playerPos.set(0,playerPos.y,-2);yaw=0;pitch=0;
+      }
+    } else if(newScene===SCENES.TRIAL){
+      playerPos.set(0,playerPos.y,-6.2);yaw=Math.PI;pitch=0;
+    } else if(newScene===SCENES.OFFICE){
+      playerPos.set(0,playerPos.y,8);yaw=0;pitch=0;
+    }
+  }
+  updateCameraRotation();
+}
+
+function updateLobbyInfo(){
+  const el=document.getElementById('lobby-tasks');
+  let html='';
+  if(lobbyTasks.length===0&&couples.length===0){
+    html='<div class="info-item" style="color:#999">暂无待办事务</div>';
+  } else {
+    lobbyTasks.forEach(t=>{html+=`<div class="info-item"><b>${t.soul.name}</b> · ${t.type==='love'?'💕 相亲成功':'📋 '+t.desc}</div>`;});
+    couples.forEach(c=>{html+=`<div class="info-item"><b>💕 ${c[0].name} & ${c[1].name}</b> · 相亲成功，待处理</div>`;});
+  }
+  el.innerHTML=html;
+  document.getElementById('lobby-info').classList.toggle('show',lobbyTasks.length>0||couples.length>0);
+}
+
+// ===== Audience System =====
+const WHISPERS=['这判官长得还行...','下一个不会是我吧？','嘘——小声点！','那个灵魂好惨啊...','判官好像挺温柔的？','我能不能提前走啊...','这地方好冷...','那个洞看起来好深...','我想回家...','判官在笑什么？','那个灵魂好像很紧张...','下一个千万别是我...','这里的咖啡好难喝...','我能不能去相亲角看看？','那个灵魂长得挺帅的...','判官好像有点偏心？','我听说这判官以前也是鬼...','那个洞的颜色好可怕...','我想喝孟婆汤...','这里的WiFi密码是多少？','听说前天判官把灵魂送错门了...','那个烧焦的鬼好臭...','我前面排了几个啊？','判官的龙椅看起来好舒服...','这轮回门会漏风...','地府食堂今天有红烧鬼...','我想念我的猫...','下辈子想当棵树...','判官你快点行不行？','听说隔壁判官开的冤案更多...','那个洞6号最可怕...','成仙门金光闪闪的好向往...','我感觉判官今天心情不错','那个亡灵一脸不服的样子','在这里坐好久了屁股疼','判官新发型不错嘛','旁边那鬼一直在偷看我...','我能不能申请换个座位？','嘘！判官看过来了！'];
+
+function spawnAudience(){
+  audienceMembers.forEach(a=>{if(a.group)trialGroup.remove(a.group);});
+  audienceMembers=[];
+  const available=lobbySouls.filter(s=>!s.processed);
+  // Use existing souls + generate filler ghosts if not enough
+  const pool=[...available];
+  while(pool.length<12){
+    pool.push({name:'无名鬼',title:'地府群众',correctPath:Math.floor(Math.random()*6),
+      friend:false,enemy:false,meangirl:false});
+  }
+  const count=Math.min(12,pool.length);
+  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  for(let i=0;i<count;i++){
+    const soulData=shuffled[i];
+    const hue=Math.random();
+    const color=new THREE.Color().setHSL(hue,0.5,0.5).getHex();
+    const group=createHumanoidSoul(color,i,soulData.correctPath,soulData);
+    // Position in seats (2 sides × 2 rows × 3 cols = 12 seats)
+    const groupIdx=i<6?i:i-6;
+    const side=i<6?-1:1;
+    const col=groupIdx%3;
+    const row=Math.floor(groupIdx/3);
+    const x=side*(8+row*1.2);
+    const z=-1+col*2.5;
+    group.position.set(x,0,z);
+    group.scale.set(.45,.45,.45);
+    const bubble=document.createElement('div');
+    bubble.className='whisper-bubble';
+    bubble.innerHTML='<div class="wb-text"></div>';
+    bubble.style.display='none';
+    const label=new CSS2DObject(bubble);label.position.set(0,1.5,0);group.add(label);
+    trialGroup.add(group);
+    audienceMembers.push({group,bubble,label,soulData,whisperTimer:Math.random()*5,isInterested:!soulData.married&&Math.random()<0.25,loveTimer:Math.random()*15});
+  }
+}
+
+function updateAudience(dt){
+  audienceMembers.forEach(a=>{
+    a.whisperTimer+=dt;
+    if(a.whisperTimer>8+Math.random()*7){
+      a.whisperTimer=0;
+      const text=WHISPERS[Math.floor(Math.random()*WHISPERS.length)];
+      a.bubble.querySelector('.wb-text').textContent=text;
+      a.bubble.style.display='block';
+      setTimeout(()=>{a.bubble.style.display='none';},3000);
+    }
+    if(a.isInterested&&currentSoul&&!currentSoul.married&&!judgingMode){
+      a.loveTimer+=dt;
+      if(a.loveTimer>12+Math.random()*8){
+        a.loveTimer=0;
+        showLoveProposal(a);
+      }
+    }
+    if(a.group){a.group.rotation.y+=.003;a.group.position.y=Math.sin(performance.now()*.001+a.whisperTimer)*.03;}
+  });
+}
+
+function showLoveProposal(audienceMember){
+  const soul=audienceMember.soulData, target=currentSoul;
+  if(!target||soul.married||target.married)return;
+  const bubble=document.createElement('div');
+  bubble.className='love-bubble';
+  bubble.innerHTML=`<div class="lb-text">💕 ${soul.name}：请问...我可以和您相亲吗？</div>`;
+  const label=new CSS2DObject(bubble);label.position.set(0,2,0);
+  audienceMember.group.add(label);
+  setTimeout(()=>{if(audienceMember.group)audienceMember.group.remove(label);},5000);
+  loveProposals.push({from:soul,to:target,time:Date.now(),accepted:null});
+}
+
+function acceptLoveProposal(proposal){
+  proposal.accepted=true;
+  const idx=audienceMembers.findIndex(a=>a.soulData===proposal.from);
+  if(idx!==-1){const a=audienceMembers[idx];if(a.group)trialGroup.remove(a.group);audienceMembers.splice(idx,1);}
+  const lobbyIdx=lobbySouls.findIndex(s=>s===proposal.from);
+  if(lobbyIdx!==-1)lobbySouls.splice(lobbyIdx,1);
+  couples.push([proposal.from,proposal.to]);
+  showFeedback(`${proposal.from.name} & ${proposal.to.name} 相亲成功 💕`,'他们已前往大厅等候');
+  if(currentSoul===proposal.to)setTimeout(()=>endCurrentTrial(),2000);
+}
+
+function rejectLoveProposal(proposal){
+  proposal.accepted=false;
+  showFeedback(`${proposal.from.name} 被婉拒了`,'它默默回到了旁听席');
+}
+
+// ===== Trial Logic =====
+const Q_BTNS=[{key:'death',label:'怎么没的'},{key:'good',label:'有啥好事'},{key:'bad',label:'干过啥'},{key:'self',label:'自我评价'},{key:'last',label:'遗言'},{key:'worry',label:'遗愿'}];
+
+function getLine(soul,key,v=0){
+  const l=soul.lines[key];if(!l)return'...';
+  if(Array.isArray(l))return l[v%l.length];
+  return String(l);
+}
+
+function soulEnter(soul){
+  updateSoulInfo(soul);
+  showTrialUI();
+  relationship=soul.friend?'friend':soul.enemy?'enemy':soul.meangirl?'meangirl':null;
+  if(soul.friend)friendCount++;if(soul.enemy)enemyCount++;
+  let prefix='';
+  if(soul.friend)prefix='😏 老熟人啊！';
+  if(soul.enemy)prefix='😈 哟，你也落我手里了？';
+  if(soul.meangirl){const other=soul.name==='小蝶'?'小美':'小蝶';prefix=`💅 姐妹驾到！${other}来没来？`;}
+  const line=getLine(soul,'enter');
+  showAnswer(`"${line}"`,`${prefix} ${soul.name} · ${soul.title}`);
+  speak(line,soul.voicePitch,soul.voiceRate);
+  askedQuestions=[];
+  if(soul.intro&&!soul.introDone){renderIntroReplies(soul);}
+  else renderQButtons(soul,[]);
+  changeMood('nervous');
+  spawnAudience();
+}
+
+function renderIntroReplies(soul){
+  const cont=document.getElementById('question-list');
+  let html='';
+  soul.intro.replies.forEach((r,i)=>{
+    html+=`<button class="q-btn intro-reply" data-i="${i}">${soul.intro.icon||'💬'} ${r.label}</button>`;
+  });
+  cont.innerHTML=html;
+  cont.querySelectorAll('button.intro-reply').forEach(b=>b.addEventListener('click',()=>selectIntroReply(soul,parseInt(b.dataset.i))));
+}
+
+function selectIntroReply(soul,idx){
+  const r=soul.intro.replies[idx];
+  soul.introDone=true;
+  showAnswer(`"${r.t}"`,`💬 你的回答：${r.label}`);
+  speak(r.t,soul.voicePitch,soul.voiceRate);
+  if(r.mood)changeMood(r.mood);else changeMood('calm');
+  if(r.r){totalScore+=r.r;}
+  autoTimer=0;
+  renderQButtons(soul,askedQuestions);
+}
+
+function updateSoulInfo(soul){
+  document.getElementById('soul-name').textContent=soul.name;
+  document.getElementById('soul-age').textContent=`· ${soul.age}岁`;
+  document.getElementById('soul-title').textContent=soul.title;
+}
+
+function showTrialUI(){
+  document.getElementById('trial-soul-info').classList.add('show');
+  document.getElementById('trial-questions').classList.add('show');
+  document.getElementById('skill-bar').classList.add('show');
+}
+
+function hideTrialUI(){
+  document.getElementById('trial-soul-info').classList.remove('show');
+  document.getElementById('trial-questions').classList.remove('show');
+  document.getElementById('trial-answer').classList.remove('show');
+  document.getElementById('skill-bar').classList.remove('show');
+}
+
+function showAnswer(text,speaker=''){
+  const el=document.getElementById('trial-answer');
+  document.getElementById('answer-text').textContent=text;
+  document.getElementById('answer-speaker').textContent=speaker;
+  el.classList.add('show');
+}
+
+function renderQButtons(soul,asked){
+  const cont=document.getElementById('question-list');
+  const avail=Q_BTNS.filter(q=>!asked.includes(q.key));
+  let html='';
+  avail.forEach(q=>{html+=`<button class="q-btn" data-key="${q.key}">${q.label}</button>`;});
+  if(relationship==='friend')html+=`<button class="q-btn harsh" id="harsh-btn">😤 老朋友也得骂</button>`;
+  if(relationship==='enemy')html+=`<button class="q-btn harsh" id="harsh-btn">👊 开怼！</button>`;
+  if(relationship==='meangirl')html+=`<button class="q-btn harsh" id="harsh-btn">💅 姐妹也敢怼</button>`;
+  if(soul.concern&&!soul.concernDone&&asked.includes('worry'))html+=`<button class="q-btn" id="divine-btn" style="border-color:#d4a017!important;color:#d4a017!important">🔮 运用神力</button>`;
+  if(!mengpoUsed&&asked.length>=1)html+=`<button class="q-btn" id="mengpo-btn" style="border-color:#6a6!important;color:#6a6!important">🍵 孟婆汤</button>`;
+  if(asked.length>=2)html+=`<button class="q-btn judge" id="judge-btn">⚖️ 送走</button>`;
+  const pendingLove=loveProposals.find(p=>p.to===soul&&p.accepted===null);
+  if(pendingLove){html+=`<button class="q-btn love-btn" id="love-yes-btn">💕 同意相亲</button><button class="q-btn" id="love-no-btn">❌ 婉拒</button>`;}
+  html+=`<button class="q-btn voice-btn ${speechEnabled?'active':''}" id="voice-btn">🔊</button>`;
+  cont.innerHTML=html;
+
+  cont.querySelectorAll('button[data-key]').forEach(b=>b.addEventListener('click',()=>askQuestion(soul,b.dataset.key)));
+  const hb=document.getElementById('harsh-btn');
+  if(hb)hb.addEventListener('click',()=>harshInteract(soul));
+  const db=document.getElementById('divine-btn');
+  if(db)db.addEventListener('click',()=>useDivinePower(soul));
+  const mb=document.getElementById('mengpo-btn');
+  if(mb)mb.addEventListener('click',()=>useMengpoSoup(soul));
+  const jb=document.getElementById('judge-btn');
+  if(jb)jb.addEventListener('click',()=>startJudging(soul));
+  const ly=document.getElementById('love-yes-btn');
+  if(ly)ly.addEventListener('click',()=>{if(pendingLove)acceptLoveProposal(pendingLove);});
+  const ln=document.getElementById('love-no-btn');
+  if(ln)ln.addEventListener('click',()=>{if(pendingLove)rejectLoveProposal(pendingLove);});
+  const vb=document.getElementById('voice-btn');
+  if(vb)vb.addEventListener('click',()=>{speechEnabled=!speechEnabled;vb.classList.toggle('active');});
+}
+
+function harshInteract(soul){
+  harshCount++;
+  let line,label;
+  if(soul.friend){const r=Math.floor(Math.random()*3);line=['你丫又给老子添麻烦！说吧这回又咋了？','行啊你小子，死了都不消停。赶紧说，别浪费时间。','老朋友归老朋友，进了我这就得照规矩来！坦白从宽！'][r];label='你怼老朋友';}
+  else if(soul.enemy){const r=Math.floor(Math.random()*3);line=['呵呵，没想到吧？风水轮流转！老实交代！','你也有今天！说！你那些破事我一清二楚！','别想糊弄我，你什么德行我不知道？从实招来！'][r];label='你开怼仇人';}
+  else if(soul.meangirl){const r=Math.floor(Math.random()*3);line=['啧，生前就爱嘴硬，死了还摆谱？把话说清楚！','姐妹归姐妹，进了我这地界照规矩来！','你再毒舌我也照判，老实交代！'][r];label='你怼姐妹';}
+  else return;
+  showAnswer(`"${line}"`,label);
+  speak(line,soul.voicePitch*0.9,soul.voiceRate*1.1);
+  changeMood('angry');
+  askAQuestion(soul);
+  autoTimer=0;
+}
+
+function askAQuestion(soul){
+  const unasked=Q_BTNS.filter(q=>!askedQuestions.includes(q.key));
+  if(unasked.length===0)return;
+  const pick=unasked[Math.floor(Math.random()*unasked.length)];
+  askQuestion(soul,pick.key);
+}
+
+function askQuestion(soul,key){
+  let line=getLine(soul,key);
+  if(key==='self'){
+    const want=PATHS[soulDesire].id, deserve=PATHS[soul.correctPath].id;
+    if(soulDesire===soul.correctPath)line=`我知道我该去「${want}」，我心里是认的。`;
+    else line=`我知道按规矩我该去「${deserve}」…但我心里想去「${want}」，大人您能成全我吗？`;
+  }
+  if(key==='worry'){
+    const pref=['唉…要说放心不下的，也就一件事：','其实我死了倒没什么，就是…','别的都还好，就是有件事一直惦记着：','说到遗愿，我就放心不下这个：','我一直憋着没说——'][Math.floor(Math.random()*5)];
+    line=soul.concern?`${pref}${soul.concern}`:'也没什么遗愿了…';
+  }
+  showAnswer(`"${line}"`,`${soul.name}的回答`);
+  speak(line,soul.voicePitch,soul.voiceRate);
+  if(!askedQuestions.includes(key))askedQuestions.push(key);
+  renderQButtons(soul,askedQuestions);
+  setTimeout(()=>maybeTriggerTrialHelp(),800);
+  if(key==='good')changeMood('happy');
+  else if(key==='bad')changeMood('sad');
+  else if(key==='worry')changeMood('sad');
+  else if(key==='death')changeMood('scared');
+  else changeMood('calm');
+  autoTimer=0;
+}
+
+function changeMood(newMood){
+  soulMood=newMood;
+  const el=document.getElementById('mood-tag');
+  if(el&&MOODS[soulMood]){const m=MOODS[soulMood];el.textContent=`${m.emoji} ${m.label}`;el.style.color=m.color;}
+}
+
+function useMengpoSoup(soul){
+  if(mengpoUsed||!soulArrived||judgingMode)return;
+  mengpoUsed=true; soulMood='calm'; changeMood('calm');
+  showAnswer('"喝下去…好像没那么执着了。去哪儿都行吧。"','孟婆汤');
+  speak('喝下去…好像没那么执着了。去哪儿都行吧。',soul.voicePitch,soul.voiceRate);
+  soulDesire=soul.correctPath; autoTimer=0;
+  renderQButtons(soul,askedQuestions);
+}
+
+function useDivinePower(soul){
+  const cost=15;
+  if(PROGRESS.balance<cost||!soul.concern||soul.concernDone)return;
+  PROGRESS.balance-=cost; PROGRESS.wishes+=1; soul.concernDone=true;
+  saveProgress(PROGRESS);
+  const result=soul.concernResult||'已用神力为你完成了心愿';
+  showAnswer(`"${result}"`,`🔮 神力显灵 · ${soul.name}`);
+  speak(result,soul.voicePitch,soul.voiceRate);
+  changeMood('grateful'); updateUI(); renderQButtons(soul,askedQuestions); autoTimer=0;
+}
+
+function startJudging(soul){
+  if(judgingMode)return;
+  judgingMode=true;
+  showAnswer(`"${getLine(soul,'last')}"`,`${soul.name}的最后遗言`);
+  const cont=document.getElementById('question-list');
+  cont.innerHTML='';
+  const desire=PATHS[soulDesire].id, deserved=PATHS[soul.correctPath].id;
+  if(desire!==deserved&&PROGRESS.balance>0){
+    const fBtn=document.createElement('button');fBtn.className='q-btn';fBtn.id='fulfill-btn';
+    fBtn.textContent=`💰 用冥币成全（${desire}）`;
+    fBtn.style.cssText='border-color:#d4a017!important;color:#d4a017!important';
+    const cost=soulSkillUseCount>0?10:20;
+    fBtn.onclick=()=>fulfillWish(soul,cost);
+    cont.appendChild(fBtn);
+  }
+  changeMood('resigned');
+}
+
+function fulfillWish(soul,cost){
+  if(PROGRESS.balance<cost)return;
+  PROGRESS.balance-=cost; saveProgress(PROGRESS);
+  showFeedback(`${soul.name} 心愿达成 ✨`,`花费 ${cost} 冥币`);
+  spawnCoin(cost); updateUI();
+  processJudgment(soul,soulDesire);
+}
+
+function judgeSoul(soul,pathIdx){
+  const selected=PATHS[pathIdx].id, desire=PATHS[soulDesire].id, deserved=PATHS[soul.correctPath].id;
+  const honored=selected===desire, just=selected===deserved;
+  let satisfaction=40;
+  if(askedQuestions.length>=3)satisfaction+=20;
+  if(askedQuestions.length>=5)satisfaction+=10;
+  if(honored)satisfaction+=35; else if(just)satisfaction+=15;
+  if(soulSkillUseCount>0)satisfaction+=15;
+  if(mengpoUsed)satisfaction+=10;
+  if(harshCount>0&&relationship)satisfaction-=harshCount*8;
+  satisfaction-=autoTriggers*10;
+  if(soulMood==='grateful')satisfaction+=10;
+  if(soulMood==='happy')satisfaction+=5;
+  const happy=satisfaction>=60;
+  const tip=happy?Math.floor(10+(satisfaction-60)/5+comboCount):0;
+  totalScore+=tip;
+  if(happy){happyCount++;comboCount++;if(comboCount>maxCombo)maxCombo=comboCount;}else{comboCount=0;}
+  if(honored)PROGRESS.wishes+=1;
+  if(tip>0){PROGRESS.total冥币+=tip;PROGRESS.balance+=tip;}
+  saveProgress(PROGRESS);
+  return{honored,just,happy,tip,satisfaction,desire,deserved};
+}
+
+function processJudgment(soul,pathIdx){
+  const result=judgeSoul(soul,pathIdx);
+  updateComboDisplay();
+  const fb=document.getElementById('feedback');
+  const main=document.getElementById('fb-main');
+  const sub=document.getElementById('fb-sub');
+  if(result.happy){main.textContent=`${soul.name} 满意了 🙏`;main.className='main happy';sub.textContent=result.tip>0?`打赏冥币 +${result.tip} ${comboCount>1?`(连击×${comboCount})`:''}`:'默默点头致谢';fb.classList.add('show');if(result.tip>0)setTimeout(()=>spawnCoin(result.tip),300);}
+  else{main.textContent=`${soul.name} 不太满意 😞`;main.className='main sad';sub.textContent=`它想去「${result.desire}」`;fb.classList.add('show');}
+  showAnswer(`"${result.happy?'谢大人！大人英明！':result.honored?'好吧…虽然不是最想去的地方，但您说了算。':'呜…我想去的是「'+result.desire+'」啊…'}"`,soul.name);
+  updateUI(); hideTrialUI();
+
+  const h=trialHoles[pathIdx];
+  h.glow.material.emissiveIntensity=1;
+  setTimeout(()=>{h.glow.material.emissiveIntensity=.3;},600);
+  h.pLight.intensity=1;
+  setTimeout(()=>{h.pLight.intensity=.3;},600);
+
+  if(soulGroup){
+    const startY=soulGroup.position.y, targetY=-0.3;
+    const holePos=new THREE.Vector3(0,0,8); // 六扇门在前方
+    const startPos=soulGroup.position.clone();
+    const duration=800, startTime=performance.now();
+    function descendAnim(){
+      const elapsed=performance.now()-startTime;
+      const t=Math.min(elapsed/duration,1);
+      const ease=1-Math.pow(1-t,3);
+      soulGroup.position.x=startPos.x+(holePos.x-startPos.x)*ease;
+      soulGroup.position.z=startPos.z+(holePos.z-startPos.z)*ease;
+      soulGroup.position.y=startY+(targetY-startY)*ease;
+      const s=1-ease*.8; soulGroup.scale.set(s,s,s);
+      if(soulGroup.userData.sprite)soulGroup.userData.sprite.material.opacity=1-ease;
+      if(t<1)requestAnimationFrame(descendAnim);
+      else{trialGroup.remove(soulGroup);soulGroup=null;currentSoul=null;soulArrived=false;isAnimating=false;judgingMode=false;fb.classList.remove('show');nextSoul();}
+    }
+    descendAnim();
+  } else {
+    setTimeout(()=>{fb.classList.remove('show');currentSoul=null;soulArrived=false;isAnimating=false;judgingMode=false;nextSoul();},1200);
+  }
+}
+
+function endCurrentTrial(){
+  if(soulGroup){trialGroup.remove(soulGroup);soulGroup=null;}
+  currentSoul=null;soulArrived=false;isAnimating=false;judgingMode=false;
+  hideTrialUI();
+  nextSoul();
+}
+
+function nextSoul(){
+  if(!isPlaying||gameState!=='trial')return;
+  soulNumber++;
+  if(soulNumber>5){endTrialDay();return;}
+  document.getElementById('soul-num').textContent=soulNumber;
+  if(soulIndex>=allSoulsQueue.length){allSoulsQueue=[...SOULS].sort(()=>Math.random()-.5);soulIndex=0;}
+  const soul=allSoulsQueue[soulIndex]; soulIndex++;
+  autoTriggers=0;soulSkillUseCount=0;soul.concernDone=false;
+  skillUses=[3,2,1]; updateSkillUI();
+  spawnSoul(soul);
+}
+
+function spawnSoul(data){
+  if(soulGroup){trialGroup.remove(soulGroup);soulGroup=null;}
+  const hue=[0.55,0.3,0.05,0.08,0.75,0.0][data.correctPath]||0.55;
+  soulColor=new THREE.Color().setHSL(hue,0.6,0.5).getHex();
+  const variant=Math.floor(Math.random()*12);
+  soulGroup=createHumanoidSoul(soulColor,variant,data.correctPath,data);
+  // 灵魂在台下（前方），面对龙椅
+  soulGroup.position.set(0,0,3);
+  soulGroup.rotation.y=Math.PI; // 面对龙椅
+  soulGroup.scale.set(.3,.3,.3);
+  trialGroup.add(soulGroup);
+  currentSoul=data;
+  soulDesire=Math.random()<.7?data.correctPath:(data.correctPath+2+Math.floor(Math.random()*4))%6;
+  soulArrived=false; soulFloatPhase=0; judgingMode=false;
+  askedQuestions=[]; autoTimer=0; autoIdx=0; skillEffects=[];
+  soulMood='calm'; mengpoUsed=false; loveProposals=[];
+  helpEventDone=false;
+}
+
+// ===== Lobby Systems =====
+function spawnLobbySouls(){
+  lobbySouls.forEach(s=>{if(s.group)lobbyGroup.remove(s.group);});
+  lobbySouls=[];
+  const count=Math.min(5,allSoulsQueue.length-soulIndex);
+  for(let i=0;i<count;i++){
+    const soulData=allSoulsQueue[soulIndex+i];if(!soulData)continue;
+    const hue=Math.random();
+    const color=new THREE.Color().setHSL(hue,0.5,0.5).getHex();
+    const group=createHumanoidSoul(color,i,soulData.correctPath,soulData);
+    const x=(Math.random()-.5)*20, z=(Math.random()-.5)*15;
+    group.position.set(x,0,z); group.scale.set(.4,.4,.4);
+    const label=document.createElement('div');
+    label.className='sign-label';
+    label.innerHTML=`<div class="sl-text">${soulData.name}</div><div class="sl-sub">${soulData.title}</div>`;
+    const labelObj=new CSS2DObject(label);labelObj.position.set(0,1.8,0);group.add(labelObj);
+    lobbyGroup.add(group);
+    lobbySouls.push({group,label,labelObj,soulData,processed:false,x,z,phase:Math.random()*100});
+  }
+}
+
+let lobbyHelpTimer=0;
+function updateLobbySouls(dt){
+  lobbyHelpTimer+=dt;
+  if(lobbyHelpTimer>20+Math.random()*15&&currentScene===SCENES.LOBBY&&gameState==='lobby'){
+    lobbyHelpTimer=0;
+    maybeLobbyHelp();
+  }
+  lobbySouls.forEach(s=>{
+    if(s.processed)return;
+    s.phase+=dt;
+    if(s.group){s.group.rotation.y+=.002;s.group.position.y=Math.sin(s.phase*.8)*.05;}
+  });
+}
+
+function inspectWorkers(){
+  officeWorkers.forEach(w=>{
+    if(w.type==='sofa')return;
+    w.stateTimer+=0.016;
+    if(w.stateTimer>6+Math.random()*8){
+      w.stateTimer=0;
+      const states=['working','slacking','eating','sleeping','typing','reading'];
+      w.state=states[Math.floor(Math.random()*states.length)];
+      const texts={working:['认真办公中...','审批档案中...','填写生死簿...'],slacking:['偷偷刷手机...','老板不在摸鱼...','盯着天花板发呆...'],eating:['吃鬼界外卖...','吸溜孟婆汤...','啃苹果...'],sleeping:['Zzz...','头一点一点...','睡得好香...'],typing:['键盘敲得飞起...','写轮回报告...','整理亡灵档案...'],reading:['看卷宗...','研究轮回政策...','学习新条例...']};
+      w.bubble.querySelector('.wb-text').textContent=(texts[w.state]||texts.working)[Math.floor(Math.random()*3)];
+      w.bubble.style.display='block';
+      setTimeout(()=>{w.bubble.style.display='none';},3500);
+      // subtle body animation
+      if(w.parts.torso){w.parts.torso.rotation.x=(Math.random()-.5)*.05;w.parts.torso.position.y=.38+(Math.random()-.5)*.02;}
+    }
+  });
+}
+
+// ===== Office System =====
+let officeVisitor=null, officeVisitorGroup=null;
+
+function handleOfficeTask(task){
+  officeVisitor=task;
+  if(officeVisitorGroup)officeGroup.remove(officeVisitorGroup);
+  const hue=Math.random();
+  const color=new THREE.Color().setHSL(hue,0.5,0.5).getHex();
+  officeVisitorGroup=createHumanoidSoul(color,0,task.soul.correctPath,task.soul);
+  officeVisitorGroup.position.set(0,0,3); officeVisitorGroup.scale.set(.6,.6,.6);
+  officeGroup.add(officeVisitorGroup);
+  if(task.type!=='love'&&Math.random()<.55){
+    maybeOfficeHelp();
+  }else{
+    showOfficeDialog(task);
+  }
+}
+
+function showOfficeDialog(task){
+  const modal=document.getElementById('task-modal');
+  const title=document.getElementById('task-title');
+  const content=document.getElementById('task-content');
+  title.textContent=`📋 ${task.soul.name}的事务`;
+  let html='';
+  if(task.type==='love'){
+    const partner=task.partner;
+    html=`<div class="section"><b>💕 相亲配对</b><br>${task.soul.name}（${task.soul.title}）和 ${partner.name}（${partner.title}）相亲成功了！</div><div class="section"><b>📖 ${task.soul.name}的生平</b><br>${task.soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${task.soul.personality||'暂无记录'}</div><div class="section"><b>📖 ${partner.name}的生平</b><br>${partner.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${partner.personality||'暂无记录'}</div><div class="section" style="text-align:center"><button class="lobby-btn primary" onclick="approveLove(${task.id})">✨ 批准配对</button><button class="lobby-btn" onclick="rejectLove(${task.id})">❌ 不合适</button></div>`;
+  } else {
+    html=`<div class="section"><b>📋 事务详情</b><br>${task.desc}</div><div class="section"><b>📖 生平</b><br>${task.soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${task.soul.personality||'暂无记录'}</div><div class="section" style="text-align:center"><button class="lobby-btn primary" onclick="resolveTask(${task.id})">✅ 处理完毕</button></div>`;
+  }
+  content.innerHTML=html; modal.classList.add('show');
+}
+
+window.approveLove=function(taskId){
+  const task=lobbyTasks.find(t=>t.id===taskId);if(!task)return;
+  task.resolved=true;
+  showFeedback(`${task.soul.name} & ${task.partner.name} 配对成功！`,'它们将一起前往下一世 💕');
+  const idx=lobbyTasks.findIndex(t=>t.id===taskId);if(idx!==-1)lobbyTasks.splice(idx,1);
+  closeModal('task-modal');updateLobbyInfo();
+  if(officeVisitorGroup){animateLeave(officeVisitorGroup,()=>{officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;});}
+};
+
+window.rejectLove=function(taskId){
+  const task=lobbyTasks.find(t=>t.id===taskId);if(!task)return;
+  task.resolved=true;
+  showFeedback(`${task.soul.name} & ${task.partner.name} 配对失败`,'它们将继续各自的旅程');
+  const idx=lobbyTasks.findIndex(t=>t.id===taskId);if(idx!==-1)lobbyTasks.splice(idx,1);
+  closeModal('task-modal');updateLobbyInfo();
+  if(officeVisitorGroup){animateLeave(officeVisitorGroup,()=>{officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;});}
+};
+
+window.resolveTask=function(taskId){
+  const task=lobbyTasks.find(t=>t.id===taskId);if(!task)return;
+  task.resolved=true;
+  showFeedback(`${task.soul.name}的事务已处理`,'它满意地离开了');
+  const idx=lobbyTasks.findIndex(t=>t.id===taskId);if(idx!==-1)lobbyTasks.splice(idx,1);
+  closeModal('task-modal');updateLobbyInfo();
+  if(officeVisitorGroup){animateLeave(officeVisitorGroup,()=>{officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;});}
+};
+
+window.closeModal=function(id){document.getElementById(id).classList.remove('show');};
+
+function animateLeave(group,onComplete){
+  const startPos=group.position.clone();
+  const targetPos=new THREE.Vector3(startPos.x,startPos.y,startPos.z+5);
+  const startTime=performance.now(), duration=1000;
+  function anim(){
+    const elapsed=performance.now()-startTime;
+    const t=Math.min(elapsed/duration,1);
+    const ease=t*t;
+    group.position.lerpVectors(startPos,targetPos,ease);
+    group.scale.setScalar(1-ease*.5);
+    if(t<1)requestAnimationFrame(anim);
+    else if(onComplete)onComplete();
+  }
+  anim();
+}
+
+function endTrialDay(){
+  gameState='lobby'; isPlaying=false;
+  couples.forEach((pair,i)=>{lobbyTasks.push({id:Date.now()+i,type:'love',soul:pair[0],partner:pair[1],desc:`${pair[0].name}和${pair[1].name}相亲成功，请求批准配对`,resolved:false});});
+  couples=[];
+  const randomTasks=[{desc:'想托梦给在世亲人',type:'dream'},{desc:'想查询前世的记忆',type:'memory'},{desc:'想申请提前投胎',type:'early'},{desc:'想投诉地府食堂',type:'complaint'},{desc:'想申请换宿舍',type:'room'}];
+  lobbySouls.forEach(s=>{if(!s.processed&&Math.random()<.4){const task=randomTasks[Math.floor(Math.random()*randomTasks.length)];lobbyTasks.push({id:Date.now()+Math.random(),type:task.type,soul:s.soulData,desc:task.desc,resolved:false});}});
+  switchScene(SCENES.LOBBY);
+  spawnLobbySouls(); updateLobbyInfo();
+  showFeedback(`第${currentDay}天工作结束`,'回到大厅处理事务');
+}
+
+function endDay(){
+  document.getElementById('final-score').textContent=totalScore;
+  document.getElementById('final-happy').textContent=`${happyCount}/5`;
+  document.getElementById('final-couples').textContent=couples.length;
+  document.getElementById('final-tasks').textContent=lobbyTasks.filter(t=>t.resolved).length;
+  let rank='实习判官';
+  if(totalScore>=80)rank='初级判官';
+  if(totalScore>=150)rank='资深判官';
+  if(totalScore>=250)rank='轮回司主';
+  if(totalScore>=400)rank='十殿阎罗';
+  document.getElementById('final-rank').textContent=`称号：${rank}`;
+  const reviews=[];
+  if(happyCount>=4)reviews.push('亡灵们对你赞不绝口');
+  else if(happyCount>=2)reviews.push('大部分亡灵还算满意');
+  else reviews.push('亡灵们颇有微词');
+  if(couples.length>0)reviews.push(`成功撮合${couples.length}对`);
+  if(lobbyTasks.filter(t=>t.resolved).length>0)reviews.push('事务处理得当');
+  document.getElementById('final-review').textContent=reviews.join(' · ');
+  document.getElementById('end-screen').classList.add('visible');
+}
+
+// ===== Utilities =====
+function showFeedback(main,sub){
+  const fb=document.getElementById('feedback');
+  document.getElementById('fb-main').textContent=main;
+  document.getElementById('fb-main').className='main happy';
+  document.getElementById('fb-sub').textContent=sub;
+  fb.classList.add('show');
+  setTimeout(()=>fb.classList.remove('show'),2000);
+}
+
+function spawnCoin(amount){
+  const el=document.createElement('div');
+  el.className='coin-fly';el.textContent=`💰 +${amount}`;
+  el.style.left='50%';el.style.top='45%';
+  el.style.transform='translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
+}
+
+function updateUI(){
+  document.getElementById('score-val').textContent=totalScore;
+  document.getElementById('trial-score').textContent=totalScore;
+  const t=getTitle(PROGRESS);
+  document.getElementById('title-tag').textContent=t.name;
+  document.getElementById('balance-val').textContent=PROGRESS.balance;
+}
+
+function updateComboDisplay(){
+  const el=document.getElementById('combo-display');
+  const num=document.getElementById('combo-num');
+  if(comboCount>1){el.classList.add('show');num.textContent=comboCount;num.style.color=comboCount>=5?'#ff0000':comboCount>=3?'#ff8800':'#d4a017';}
+  else{el.classList.remove('show');}
+}
+
+function updateSkillUI(){
+  for(let i=0;i<3;i++){
+    const el=document.querySelector(`.skill-item[data-skill="${i}"]`);
+    if(!el)continue;
+    el.classList.toggle('active',i===activeSkill);
+    el.classList.toggle('used',skillUses[i]<=0);
+    el.querySelector('.count').textContent=`×${skillUses[i]}`;
+  }
+}
+
+let speechEnabled=true;
+function speak(text,pitch=1,rate=1){
+  if(!speechEnabled||!text||!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='zh-CN';u.pitch=pitch;u.rate=rate;
+  const voices=speechSynthesis.getVoices();
+  const zh=voices.find(v=>v.lang.includes('zh'));
+  if(zh)u.voice=zh;
+  speechSynthesis.speak(u);
+}
+if(window.speechSynthesis){speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();}
+
+function useSkillOnSoul(soulData){
+  if(!soulGroup||!soulArrived||judgingMode)return;
+  if(skillUses[activeSkill]<=0)return;
+  skillUses[activeSkill]--; updateSkillUI();
+  const sData=SKILLS[activeSkill];
+  const line=soulData.skill_reveal?soulData.skill_reveal[activeSkill]:'哎哟！';
+  showAnswer(`"${line}"`,`被${sData.id}击中`);
+  for(let i=0;i<15;i++){
+    const p=new THREE.Mesh(new THREE.SphereGeometry(.03,6,6),new THREE.MeshStandardMaterial({color:sData.color,emissive:sData.color,emissiveIntensity:.3}));
+    p.position.copy(soulGroup.position);p.position.y+=.8;
+    p.userData={vx:(Math.random()-.5)*.12,vy:Math.random()*.06,vz:(Math.random()-.5)*.12,life:1};
+    trialGroup.add(p);skillEffects.push(p);
+  }
+  speak(line,soulData.voicePitch,soulData.voiceRate);
+  skillUsedCount++;soulSkillUseCount++;autoTimer=0;
+}
+
+function updateSkillEffects(){
+  for(let i=skillEffects.length-1;i>=0;i--){
+    const e=skillEffects[i];
+    e.userData.life-=.02;
+    e.position.x+=e.userData.vx;e.position.y+=e.userData.vy;e.position.z+=e.userData.vz;
+    e.userData.vy-=.002;e.scale.setScalar(e.userData.life);
+    if(e.userData.life<=0){trialGroup.remove(e);skillEffects.splice(i,1);}
+  }
+}
+
+// ===== Animation Loop =====
+let animTime=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  animTime+=0.016;
+
+  updateMovement();
+  updateCameraRotation();
+
+  if(playerModel&&playerModel.userData.legs){
+    if(playerIsMoving){
+      const step=Math.sin(animTime*8)*.14;
+      playerModel.userData.legs.forEach((l,i)=>{l.rotation.x=step*(i===0?1:-1);});
+      playerModel.userData.arms.forEach((a,i)=>{a.rotation.z=(a.userData.rest||0)+step*.3*(i===0?1:-1);});
+    } else {
+      playerModel.userData.legs.forEach((l)=>{l.rotation.x=0;});
+      playerModel.userData.arms.forEach((a)=>{a.rotation.z=a.userData.rest||0;});
+    }
+  }
+
+  if(currentScene===SCENES.LOBBY){
+    officeWorkers.forEach(w=>{if(w.parts.anim)w.parts.anim(w,animTime);});
+    inspectWorkers();
+    updateLobbySouls(0.016);
+  }
+
+  if(currentScene===SCENES.TRIAL){
+    updateAudience(0.016);
+    trialHoles.forEach((h,i)=>{
+      h.glow.material.emissiveIntensity=.3+Math.sin(animTime*1.2+i*1.8)*.15;
+      // Colorful glow shift
+      if(h.data&&h.data.color){
+        const c=new THREE.Color(h.data.color);
+        const shift=Math.sin(animTime*.4+i)*.2;
+        c.offsetHSL(shift*.02,0,.1*Math.sin(animTime*.5+i*.7));
+        if(h.glow.material.emissive)h.glow.material.emissive.copy(c);
+        h.glow.material.color.copy(c);
+      }
+    });
+
+    if(soulGroup&&!isAnimating){
+      soulFloatPhase+=0.016;
+      const bob=Math.sin(soulFloatPhase*2)*.02;
+      const targetY=soulArrived?bob:0;
+      soulGroup.position.y+=(targetY-soulGroup.position.y)*.03;
+      soulGroup.rotation.y=Math.PI+Math.sin(soulFloatPhase*.35)*.06;
+      soulGroup.position.x=Math.sin(soulFloatPhase*.35)*.06;
+
+      const targetScale=1;
+      const sc=soulGroup.scale.x+(targetScale-soulGroup.scale.x)*.08;
+      soulGroup.scale.set(sc,sc,sc);
+
+      const breathe=1+Math.sin(soulFloatPhase*1.8)*.015;
+      if(soulGroup.userData.body)soulGroup.userData.body.scale.y=breathe;
+      if(soulGroup.userData.robe)soulGroup.userData.robe.scale.set(breathe,1,breathe);
+
+      if(soulGroup.userData.arms){
+        soulGroup.userData.arms.forEach((arm,i)=>{
+          if(arm)arm.rotation.z=(i===0?1:-1)*(.15+Math.sin(soulFloatPhase*1.5+i)*.12);
+        });
+      }
+
+      if(soulGroup.userData.auraPts&&soulGroup.userData.auraData){
+        const aPos=soulGroup.userData.auraPts.geometry.attributes.position.array;
+        const aData=soulGroup.userData.auraData;
+        for(let i=0;i<aData.length;i++){
+          const d=aData[i];
+          const a=d.angle+soulFloatPhase*d.speed;
+          aPos[i*3]=Math.cos(a)*d.radius;
+          aPos[i*3+1]=.8+d.height+Math.sin(soulFloatPhase*d.speed+d.phase)*.05;
+          aPos[i*3+2]=Math.sin(a)*d.radius;
+        }
+        soulGroup.userData.auraPts.geometry.attributes.position.needsUpdate=true;
+      }
+
+      if(soulGroup.userData.headGroup){
+        soulGroup.userData.headGroup.rotation.z=Math.sin(soulFloatPhase*.8)*.03;
+        soulGroup.userData.headGroup.rotation.x=Math.sin(soulFloatPhase*.5)*.02;
+      }
+
+      if(soulArrived&&soulGroup.userData.legs){
+        soulGroup.userData.legs.forEach((leg,i)=>{
+          leg.rotation.x=Math.sin(soulFloatPhase*2+i*Math.PI)*.1;
+        });
+      }
+
+      if(!soulArrived&&soulGroup.scale.x>0.9){
+        soulArrived=true;
+        if(currentSoul)soulEnter(currentSoul);
+      }
+    }
+
+    if(isPlaying&&soulArrived&&!judgingMode&&currentSoul&&askedQuestions.length>0){
+      autoTimer+=0.016;
+      if(autoTimer>=15){
+        autoTimer=0;autoIdx++;
+        let line;
+        if(autoIdx%3===0&&currentSoul.concern){line=`唉…${currentSoul.concern}`;}
+        else{const lines=currentSoul.lines.auto;if(lines&&lines.length>0)line=lines[autoIdx%lines.length];}
+        if(line){showAnswer(`"${line}"`,`${currentSoul.name}（自言自语）`);speak(line,currentSoul.voicePitch,currentSoul.voiceRate*0.9);autoTriggers++;}
+      }
+    }
+
+    updateSkillEffects();
+  }
+
+  renderer.render(scene,camera);
+  labelRenderer.render(scene,camera);
+}
+
+// ===== Office Door & Chair Interaction =====
+let isTransitioning=false, isSitting=false;
+let walkTarget=null, walkStart=null, walkProgress=0;
+let onWalkComplete=null;
+
+function walkCameraTo(targetPos, targetLookAt, duration=1000, onDone){
+  walkStart={x:playerPos.x,y:playerPos.y,z:playerPos.z};
+  walkTarget={x:targetPos.x,y:targetPos.y,z:targetPos.z};
+  walkProgress=0;
+  isTransitioning=true;
+  onWalkComplete=onDone;
+  const lookTarget=new THREE.Vector3(targetLookAt.x,targetLookAt.y,targetLookAt.z);
+  const dir=new THREE.Vector3().subVectors(lookTarget,new THREE.Vector3(targetPos.x,targetPos.y,targetPos.z)).normalize();
+  const targetYaw=Math.atan2(-dir.x,-dir.z);
+  const targetPitch=Math.asin(dir.y);
+  function doWalk(){
+    walkProgress+=0.02;
+    if(walkProgress>=1){
+      walkProgress=1;isTransitioning=false;
+      playerPos.set(targetPos.x,playerPos.y,targetPos.z);
+      yaw=targetYaw;pitch=Math.max(-1.2,Math.min(1.2,targetPitch));
+      if(playerModel){playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);playerModel.rotation.y=yaw+Math.PI;}
+      updateCameraRotation();
+      if(onWalkComplete){const cb=onWalkComplete;onWalkComplete=null;cb();}
+      return;
+    }
+    const t=1-Math.pow(1-walkProgress,3);
+    playerPos.set(
+      walkStart.x+(walkTarget.x-walkStart.x)*t,
+      playerPos.y,
+      walkStart.z+(walkTarget.z-walkStart.z)*t
+    );
+    yaw+=(targetYaw-yaw)*.08;
+    pitch+=(Math.max(-1.2,Math.min(1.2,targetPitch))-pitch)*.08;
+    if(playerModel){playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);playerModel.rotation.y=yaw+Math.PI;}
+    updateCameraRotation();
+    requestAnimationFrame(doWalk);
+  }
+  doWalk();
+}
+
+function enterOfficeWithAnimation(){
+  if(isTransitioning)return;
+  // Quickly switch to office scene, then walk in
+  switchScene(SCENES.OFFICE);
+  playerPos.set(0,playerPos.y,9);
+  yaw=0;pitch=0;
+  if(playerModel){playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);playerModel.rotation.y=Math.PI;}
+  updateCameraRotation();
+  walkCameraTo(
+    {x:0,y:0,z:2},
+    {x:0,y:0.7,z:-2},
+    1200,
+    ()=>{
+      showFeedback('点击办公椅坐下','按 Q 站起');
+    }
+  );
+}
+
+function sitOnOfficeChair(){
+  if(isTransitioning||isSitting)return;
+  isSitting=true;
+  const targetYaw=0,pitchTarget=-0.15;
+  walkCameraTo(
+    {x:0,y:0,z:1.6},
+    {x:0,y:0.75,z:-2},
+    800,
+    ()=>{showFeedback('已坐下，按 Q 起身','可在此处理事务');}
+  );
+}
+
+function standUpFromChair(){
+  if(!isSitting||isTransitioning)return;
+  isSitting=false;
+  walkCameraTo(
+    {x:0,y:0,z:2.5},
+    {x:0,y:0.7,z:-2},
+    600,
+    ()=>{}
+  );
+}
+
+// ===== Raycaster =====
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+const centerMouse=new THREE.Vector2(0,0);
+
+renderer.domElement.addEventListener('mousemove',(e)=>{
+  mouse.x=(e.clientX/window.innerWidth)*2-1;
+  mouse.y=-(e.clientY/window.innerHeight)*2+1;
+});
+
+function handleCenterClick(){
+  if(currentScene===SCENES.LOBBY){
+    raycaster.setFromCamera(centerMouse,camera);
+    const doorIntersects=raycaster.intersectObjects(lobbyGroup.children,true);
+    for(const hit of doorIntersects){
+      let obj=hit.object;
+      while(obj&&!obj.userData.type)obj=obj.parent;
+      if(obj&&obj.userData.type==='door'){
+        if(obj.userData.target==='trial'){startTrial();return;}
+        else if(obj.userData.target==='office'){enterOfficeWithAnimation();return;}
+      }
+    }
+    const soulMeshes=[];
+    lobbySouls.forEach(s=>{if(s.group&&!s.processed){s.group.traverse(c=>{if(c.isMesh)soulMeshes.push({mesh:c,soul:s});});}});
+    const soulHits=raycaster.intersectObjects(soulMeshes.map(m=>m.mesh));
+    if(soulHits.length>0){const hitSoul=soulMeshes.find(m=>m.mesh===soulHits[0].object);if(hitSoul){if(hitSoul.soul.helpPending&&hitSoul.soul.helpEvt)openHelpAsk(hitSoul.soul.soulData,'lobby');else showBio(hitSoul.soul.soulData);}}
+    officeWorkers.forEach(w=>{
+      const workerMeshes=[];w.group.traverse(c=>{if(c.isMesh)workerMeshes.push(c);});
+      const workerHits=raycaster.intersectObjects(workerMeshes);
+      if(workerHits.length>0){const label=w.type==='sofa'?'旁听鬼差':w.type==='sitting'?'办公鬼差':'亡灵职员';w.bubble.querySelector('.wb-text').textContent=label+'：正在工作中';w.bubble.style.display='block';setTimeout(()=>{w.bubble.style.display='none';},3000);}
+    });
+  }
+
+  if(currentScene===SCENES.TRIAL){
+    if(isPlaying&&!isAnimating&&soulArrived&&currentSoul){
+      raycaster.setFromCamera(centerMouse,camera);
+      const holeMeshes=trialHoles.map(h=>h.clickTarget);
+      const hits=raycaster.intersectObjects(holeMeshes);
+      if(hits.length>0){
+        const hit=hits[0].object;
+        const idx=trialHoles.findIndex(h=>h.clickTarget===hit);
+        if(idx!==-1){
+          if(judgingMode){isAnimating=true;processJudgment(currentSoul,idx);}
+          else{showFeedback(`🚪 ${trialHoles[idx].data.icon} ${trialHoles[idx].data.id}门 — ${trialHoles[idx].data.desc}`);}
+          return;
+        }
+      }
+    }
+    if(isPlaying&&!judgingMode&&soulGroup&&soulArrived&&currentSoul){
+      const soulMeshes=[];soulGroup.traverse(c=>{if(c.isMesh)soulMeshes.push(c);});
+      raycaster.setFromCamera(centerMouse,camera);
+      const hits=raycaster.intersectObjects(soulMeshes);
+      if(hits.length>0&&skillUses[activeSkill]>0){useSkillOnSoul(currentSoul);return;}
+    }
+  }
+
+  if(currentScene===SCENES.OFFICE){
+    raycaster.setFromCamera(centerMouse,camera);
+    const officeHits=raycaster.intersectObjects(officeGroup.children,true);
+    for(const hit of officeHits){
+      let obj=hit.object;
+      while(obj&&!obj.userData.type)obj=obj.parent;
+      if(!obj)continue;
+      if(obj.userData.type==='door'&&obj.userData.target==='lobby'){
+        if(isSitting){standUpFromChair();setTimeout(()=>switchScene(SCENES.LOBBY),700);}
+        else switchScene(SCENES.LOBBY);
+        return;
+      }
+      if(obj.userData.type==='chair'&&!isSitting){
+        sitOnOfficeChair();
+        return;
+      }
+    }
+  }
+}
+
+// ===== UI Events =====
+document.addEventListener('keydown',(e)=>{
+  const k=e.key.toLowerCase();
+  if(keys.hasOwnProperty(k)){keys[k]=true;e.preventDefault();}
+  if((e.key==='e'||e.key==='E')&&isPlaying&&!judgingMode&&gameState==='trial'){
+    for(let i=0;i<3;i++){const next=(activeSkill+1+i)%3;if(skillUses[next]>0){activeSkill=next;break;}}
+    updateSkillUI();
+  }
+  if((e.key==='q'||e.key==='Q')&&isSitting){standUpFromChair();}
+});
+document.addEventListener('keyup',(e)=>{
+  const k=e.key.toLowerCase();
+  if(keys.hasOwnProperty(k)){keys[k]=false;e.preventDefault();}
+});
+
+document.getElementById('btn-leave-trial').addEventListener('click',()=>{
+  if(soulGroup){trialGroup.remove(soulGroup);soulGroup=null;}
+  currentSoul=null;soulArrived=false;judgingMode=false;isPlaying=false;
+  hideTrialUI();gameState='';
+  switchScene(SCENES.LOBBY);
+});
+document.getElementById('btn-trial').addEventListener('click',startTrial);
+document.getElementById('btn-inspect').addEventListener('click',()=>{showFeedback('👁️ 正在视察职员','点击鬼职员查看详情');});
+document.getElementById('btn-office').addEventListener('click',()=>{
+  if(lobbyTasks.length===0){showFeedback('暂无待处理事务','先完成审判工作吧');return;}
+  enterOfficeWithAnimation();if(lobbyTasks.length>0)setTimeout(()=>handleOfficeTask(lobbyTasks[0]),3000);
+});
+document.getElementById('btn-end-day').addEventListener('click',endDay);
+document.getElementById('btn-office-back').addEventListener('click',()=>{
+  switchScene(SCENES.LOBBY);
+  if(officeVisitorGroup){officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;}
+});
+
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',()=>{
+  document.getElementById('end-screen').classList.remove('visible');
+  currentDay++; startGame();
+});
+
+function startGame(){
+  document.getElementById('loading').classList.add('hidden');
+  totalScore=0;happyCount=0;skillUsedCount=0;soulNumber=0;
+  harshCount=0;friendCount=0;enemyCount=0;relationship=null;
+  fireEyesActive=false;comboCount=0;maxCombo=0;
+  couples=[];lobbyTasks=[];loveProposals=[];
+  PROGRESS=loadProgress();
+  document.getElementById('day-num').textContent=currentDay;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.remove('visible');
+  allSoulsQueue=[...SOULS].sort(()=>Math.random()-.5);soulIndex=0;
+  switchScene(SCENES.LOBBY);
+  spawnLobbySouls();spawnOfficeWorkers();updateUI();updateLobbyInfo();
+  console.log('游戏开始！第'+currentDay+'天');
+}
+
+function startTrial(){
+  gameState='trial';isPlaying=true;isAnimating=false;
+  soulArrived=false;judgingMode=false;soulNumber=0;
+  if(soulGroup){trialGroup.remove(soulGroup);soulGroup=null;}
+  switchScene(SCENES.TRIAL);
+  updateSkillUI();
+  setTimeout(()=>nextSoul(),800);
+}
+
+function showBio(soul){
+  const modal=document.getElementById('bio-modal');
+  document.getElementById('bio-title').textContent=`📖 ${soul.name}的生平档案`;
+  document.getElementById('bio-content').innerHTML=`<div class="section"><b>姓名：</b>${soul.name} · ${soul.age}岁</div><div class="section"><b>称号：</b>${soul.title}</div><div class="section"><b>死因：</b>${soul.death}</div><div class="section"><b>生平：</b>${soul.bio||'暂无记录'}</div><div class="section"><b>性格：</b>${soul.personality||'暂无记录'}</div><div class="section"><b>应得：</b>${PATHS[soul.correctPath].id}</div>`;
+  modal.classList.add('show');
+}
+
+// ===== Help Event System =====
+const HELP_EVENTS=[
+  {id:'dream',icon:'💤',cost:8,min:4,reward:6,cap:'阳台 · 等雨',ask:'大人…我走得急，家里阳台还晾着衣裳，今晚怕是要下大雨了。求您替我托个梦给老伴，让她把衣裳收进来。那是她给我买的最后一件衬衫，我舍不得让它淋湿…',results:[{t:'天刚擦黑老伴就醒了，说梦里我催她收衣服，还嗔怪我怎么老记挂这些小事。她收了衣裳，对着阳台发了好一阵呆，最后把衬衫叠得整整齐齐，压在衣柜最上头。',r:6,g:'grateful'},{t:'老伴在梦里抱着我哭了一整夜，醒来枕巾湿了一大片。她说，梦见我站在阳台冲她笑，她伸手却够不着…',r:4,g:'sad'},{t:'老伴没信这个梦，翻个身又睡了。雨下了一整夜，阳台的衣裳湿透了，滴答滴答，像在替谁哭。',r:-2,g:'sad'}]},
+  {id:'letter',icon:'✉️',cost:10,min:6,reward:8,cap:'寄往阳间',ask:'大人…我闺女在城里上班，一个人，总是报喜不报忧。我走得太突然，一句叮嘱都没来得及留。求您帮我捎封信，告诉她——爸爸在下面挺好的，让她别把自己逼得太紧，想家了就回老屋看看。',results:[{t:'信是在闺女的工位上发现的，夹在她天天带的笔记本里。她读到一半，先是笑了，笑着笑着就哭了，哭完把信贴在心口，给老家的座机打了个电话。',r:8,g:'grateful'},{t:'闺女皱着眉头看了半天，只当是同事的恶作剧，顺手扔进了碎纸机。纸片纷纷扬扬，像下了一场无声的雪。',r:-3,g:'sad'},{t:'信在半路被一阵阴风卷走了，不知落到了哪里。也许哪天，它会被另一个思念的人捡到。',r:-1,g:'calm'}]},
+  {id:'job',icon:'🧑‍💼',cost:12,min:8,reward:10,cap:'阴差差事',ask:'大人！我这人闲不住，生前干了一辈子力气活。您看地府这么大，能不能帮我递句话，给我安排个差事？挑水、扫地、记账都成，我不挑，只要能干活，我就踏实。',results:[{t:'上面批下来了，给您安排了个阴差的名额，负责引魂时替老人打伞。您乐得合不拢嘴，说这活计比生前轻松多了。',r:10,g:'grateful'},{t:'差事是有了，但只能先从见习开始，跟着老鬼差跑腿学规矩。您说没事，干得踏实就行。',r:4,g:'calm'},{t:'上边的人翻着册子直摇头，说您生前欠了工钱没结清，资格不够。您愣在原地，半天没说话。',r:-4,g:'sad'}]},
+  {id:'photo',icon:'📷',cost:6,min:4,reward:5,cap:'全家福',ask:'大人，我这一辈子净忙着挣钱，连一张全家福都没顾上拍。等我想起来，人都散了一半。求您帮我托个梦，让我那老两口和孩子们再聚一回，好好拍张照。我就在旁边看着…',results:[{t:'清明那天，家里老小真的聚齐了，在院里的老槐树下拍了张全家福。冲好的照片烧给了我，我抱在怀里看了又看，边边角角都摸遍了。',r:7,g:'grateful'},{t:'家里人说改天再聚，改天、改天…照片终究没拍成。我蹲在坟头，看着他们各自散去。',r:-2,g:'sad'},{t:'照片拍成了！一家人笑得跟从前一样甜，孙女还在照片上写了个"想爷爷"。',r:6,g:'happy'}]},
+  {id:'debt',icon:'💰',cost:14,min:10,reward:10,cap:'还债 · 心安',ask:'大人…我生前做生意，赊过街坊王老三一袋米钱，一直没还。我走以后，这事像根刺似的扎在心里。求您替我把这钱还上，让他心里也能放下，我也能安心投胎。',results:[{t:'王老三收了钱，先是一愣，随即抹了把眼睛，说您生前最讲信用，他没看错人。街坊们听说了，都念您一句好。',r:10,g:'grateful'},{t:'钱倒是送出去了，可糊涂鬼差送错了门，送给了隔壁村同姓的人家。那边莫名其妙，这边气得跳脚。',r:-5,g:'sad'},{t:'王老三前年也走了。钱在手里，却没了去处，您对着冥币发了半晌的呆。',r:-2,g:'calm'}]},
+  {id:'pet',icon:'🐱',cost:7,min:5,reward:6,cap:'老猫 · 有人疼',ask:'大人，我养了十二年的老猫还在阳间，就剩它一个了。房子被锁着，门缝里塞着猫粮。我实在不放心，求您替我去看一眼，它还好不好？要是有人收留它，那就谢天谢地了。',results:[{t:'您去看了——猫被对门的大姐收养了，养得油光水滑，胖了一圈，正趴在阳台上晒太阳。它眯着眼，尾巴尖儿一翘一翘的。',r:6,g:'happy'},{t:'猫瘦得皮包骨头，蹲在旧门口，对着空屋子叫。粮盆空了，水也干了。',r:-3,g:'sad'},{t:'猫没有走。它就睡在您坟头的土包上，团成一团，耳朵警觉地竖着，好像还在等您回来。',r:5,g:'sad'}]},
+  {id:'family',icon:'👨‍👩‍👧',cost:9,min:6,reward:7,cap:'传话 · 念',ask:'大人，我死得急，是半夜里心口一梗就没的。一句话都没来得及跟家里人说。求您替我传个话：让他们别老哭，我走得不算痛苦，也让他们好好吃饭，别糟践身子。',results:[{t:'传话送到了，家里人半信半疑，可到底是信了。媳妇说梦里听见您的声音，踏实多了，晚上还给孩子们多煎了两个蛋。',r:8,g:'grateful'},{t:'家里人只觉得是骗子在作怪，把传话的老鬼差赶了出去，还往门口泼了盆水。您知道后，只是苦笑。',r:-2,g:'sad'},{t:'当天夜里，家里人回了老屋，点了三炷香，对着南边磕了三个头。香灰落下来，像您终于放下的一口气。',r:6,g:'grateful'}]},
+  {id:'item',icon:'🔦',cost:5,min:3,reward:4,cap:'房梁上的秘密',ask:'大人…我生前背着老伴藏了点私房钱，在老家房梁第二根椽子的缝里。本想留着给她个惊喜，没想到人先走了。求您帮我去找找，告诉她钱在哪，让她别不舍得花。',results:[{t:'钱找到了！老伴捧着旧布包里的钱，又哭又笑，说您这个老不死的，藏得真够深。她把钱收好，说留着给孙子念书。',r:6,g:'happy'},{t:'钱早被儿子翻出来了，买了一堆乱七八糟的东西。老伴知道了，气得念叨了您一晚上。',r:-3,g:'sad'},{t:'老伴找到钱，先是一愣，随即笑了，说您藏得这么深，这辈子还算有本事。她把钱压在枕头底下，晚上睡得很香。',r:5,g:'happy'}]},
+  {id:'wish',icon:'✨',cost:11,min:7,reward:8,cap:'头奖 · 圆梦',ask:'大人，我这一辈子老实巴交，连张彩票都没中过。没别的念想，就想让老伴也尝一回"中奖"的滋味。求您帮我托个梦，让她随便买个号，圆我一回念想。',results:[{t:'托的梦灵了！老伴随手买的号中了头彩，乐得在院子里转圈。她逢人就说，是您保佑的。',r:9,g:'grateful'},{t:'号差了一个数！老伴举着彩票对天骂了一晚上，说您这老鬼，连梦里都不让她痛快。',r:-4,g:'sad'},{t:'老伴把彩票当废纸，随手扔进了灶膛。纸烧起来的时候，她好像看见您蹲在门口笑。',r:-2,g:'calm'}]},
+  {id:'water',icon:'🪴',cost:6,min:4,reward:5,cap:'阳台的花还开着',ask:'大人…我阳台那几盆月季，跟了我好几年了。我走得急，它们还在窗台上晒着。求您托个梦，让我老伴记得浇浇水。',results:[{t:'老伴果然去浇了花，月季开得比往年都艳。她说，每次浇水都像您在身边。',r:7,g:'grateful'},{t:'花没人管，枯了一大半。老伴路过阳台，叹了口气说：这花也随了您了。',r:-3,g:'sad'},{t:'邻居家的猫总来蹭花盆，月季歪了又歪。可到底是活着，还冒了新芽。',r:5,g:'happy'}]},
+  {id:'book',icon:'📖',cost:5,min:3,reward:4,cap:'图书馆的借书',ask:'大人，我从图书馆借的《平凡的世界》还没还，都逾期大半年了。求您托个梦，让我闺女去还了书，再替我借本续集。',results:[{t:'闺女去还了书，又续借了上中下三册。她说，书页里还夹着我当年写的便签。',r:6,g:'grateful'},{t:'书没人还，图书馆打了无数电话，最后学校收了一笔逾期费。老伴说亏大了。',r:-3,g:'sad'},{t:'书被家里人翻出来，女儿就着台灯读完，说像又听您讲了一遍故事。',r:6,g:'happy'}]},
+  {id:'cook',icon:'🍲',cost:8,min:5,reward:7,cap:'家里的拿手菜',ask:'大人，我这辈子最拿手的是红烧肉，老伴和孩子都好这口。我走以后，家里怕是再没人会烧了。求您托个梦，把方子教给我儿子。',results:[{t:'儿子照着梦里的方子烧了一锅，全家人吃出了眼泪。他说这是爸爸的味道。',r:8,g:'grateful'},{t:'儿子把糖当盐下了，一锅肉又苦又咸。他蹲在厨房，哭得像个孩子。',r:-3,g:'sad'},{t:'孙女学会烧肉了，还加了您最爱放的那把冰糖。全家都说好吃。',r:6,g:'happy'}]},
+  {id:'watch',icon:'⌚',cost:7,min:4,reward:6,cap:'那块旧手表',ask:'大人，我爹传给我的老手表，走了一辈子。临终前我把它放在抽屉里，求您托个梦，让儿子修好它，替我把它戴回去。',results:[{t:'儿子把手表修好了，擦了又擦，戴在手腕上。秒针走起来，像爹又活了一次。',r:7,g:'grateful'},{t:'表被人当废品收走了。儿子找了好几天，终究没找着。',r:-4,g:'sad'},{t:'孙子上学戴着它，同学都羡慕。表还是走得准，一分不差。',r:6,g:'happy'}]},
+  {id:'song',icon:'🎵',cost:6,min:4,reward:5,cap:'给她唱首歌',ask:'大人，我年轻时候给老伴唱过一首歌，她说那是她听过最好听的。我走得急，没来得及唱完最后一段。求您托个梦，让我把歌给她唱完。',results:[{t:'老伴梦里听我唱完了整首，醒来一直在笑。她说那旋律，她一辈子都记得。',r:8,g:'grateful'},{t:'老伴醒得太早，没听全。她坐在床边，跟着哼了几句，又住了声。',r:4,g:'sad'},{t:'孙女把这首歌学会了，在清明那天唱给全家人听。',r:6,g:'happy'}]},
+  {id:'umbrella',icon:'🌂',cost:5,min:3,reward:4,cap:'雨夜的那把伞',ask:'大人，天气预报说明天有雨，老伴一个人出门买菜，她总忘带伞。求您托个梦，让她带上那把我们一起买的伞。',results:[{t:'老伴梦里记着带伞了，那场雨下得真大。她撑着伞，在雨里站了好一会儿。',r:7,g:'grateful'},{t:'老伴还是忘了带伞，淋了个透。她在屋檐下躲雨，说以前都是您来接她。',r:-3,g:'sad'},{t:'雨没下，太阳却很大。老伴揣着伞走了一路，说就当您陪着她。',r:5,g:'happy'}]},
+  {id:'meat',icon:'🥓',cost:9,min:6,reward:8,cap:'年关的腊肉',ask:'大人，每年过年我都灌腊肠、腌腊肉，街坊邻里都夸。今年我走了，老伴不会这一套。求您托个梦，让她跟对门老张学学，年还是那个年。',results:[{t:'老伴真去学了，还腌得有模有样。年三十，满院都是肉香，街坊都说有年味了。',r:8,g:'grateful'},{t:'老伴嫌麻烦，过年买了现成的。腊肉虽香，可她说不是那个味儿。',r:-3,g:'sad'},{t:'对门老张手把手教，老伴学会了，还送了几块给邻居。',r:6,g:'happy'}]},
+  {id:'light',icon:'🏮',cost:4,min:2,reward:3,cap:'门口留的灯',ask:'大人，我以前不管多晚回家，门口那盏灯都亮着。现在我走了，家里没人等灯了。求您托个梦，让我儿子记得，也给他妈留一盏灯。',results:[{t:'儿子每晚都给门口留灯。老伴说，灯亮着，就感觉您还在。',r:7,g:'grateful'},{t:'家里换了感应灯，人走过才亮。老伴说，没人等灯了。',r:-3,g:'sad'},{t:'孙女把那盏老灯修好了，挂回门口。灯一亮，全家心里都暖。',r:6,g:'happy'}]},
+  {id:'seed',icon:'🌱',cost:5,min:3,reward:4,cap:'种下那颗种子',ask:'大人，我跟老伴约好要种一棵桂花树，等开花了一起闻香。种子都买好了，我还来不及种。求您托个梦，让她替我把树种下。',results:[{t:'老伴把树种在院子中央。春天发了芽，她说等花开的时候，让我一定回来看。',r:8,g:'grateful'},{t:'种子被鸟叼走了。老伴找了好久，索性又买了一袋，说是替您补上。',r:5,g:'happy'},{t:'树苗被野兔啃了。老伴唉声叹气，说这事还是得您来做。',r:-2,g:'sad'}]},
+  {id:'tea',icon:'🍵',cost:6,min:4,reward:5,cap:'清晨那壶早茶',ask:'大人，我生前每天早上都给老伴沏一壶茶，就着包子油条。我走了，她怕是连茶都不会沏了。求您托个梦，让我儿子学会沏茶，天天给他妈泡一壶。',results:[{t:'儿子学会了沏茶，天天早上给妈泡一壶。老伴说，茶还是那个味儿。',r:7,g:'grateful'},{t:'儿子忙，隔三差五才回来。老伴自己烧水，茶总是烫嘴。',r:-2,g:'sad'},{t:'儿媳也学会了，一大家人围在桌边喝早茶，热闹得像从前。',r:6,g:'happy'}]},
+];
+const HELP_TRIGGERS=['🙏 求帮忙','🙏 帮帮我','🙏 大人救我','🙏 有事相求','🙏 求您帮个忙','🙏 想求您件事'];
+
+function drawPerson(ctx,x,y,s,color){
+  ctx.fillStyle=color;
+  ctx.beginPath();ctx.arc(x,y-s,s*.42,0,Math.PI*2);ctx.fill();
+  ctx.fillRect(x-s*.3,y-s*.05,s*.6,s*.75);
+  ctx.strokeStyle=color;ctx.lineWidth=Math.max(2,s*.12);ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x-s*.2,y+.7*s);ctx.lineTo(x-s*.28,y+s);ctx.moveTo(x+s*.2,y+.7*s);ctx.lineTo(x+s*.28,y+s);ctx.stroke();
+}
+
+function renderEventPhoto(evt){
+  try{
+    const cvs=document.createElement('canvas');cvs.width=560;cvs.height=400;
+    const g=cvs.getContext('2d');
+    g.fillStyle='#f7f4ee';g.fillRect(0,0,560,400);
+    const W=520,H=330,X=20,Y=20;
+    g.fillStyle='#fff';g.fillRect(X,Y,W,H);
+    g.strokeStyle='#e2d9c8';g.lineWidth=4;g.strokeRect(X,Y,W,H);
+    g.save();g.beginPath();g.rect(X,Y,W,H);g.clip();
+    g.font='140px serif';g.textAlign='center';g.textBaseline='middle';
+    const evtId=evt?evt.id:'';
+    if(evtId==='dream'){
+      g.fillStyle='#22313f';g.fillRect(X,Y,W,H);
+      g.fillStyle='#f0e6d6';g.fillRect(X+70,Y+80,380,190);
+      g.strokeStyle='#8a6b3f';g.lineWidth=8;g.strokeRect(X+70,Y+80,380,190);
+      g.strokeStyle='#5c4630';g.lineWidth=4;
+      g.beginPath();g.moveTo(X+70,Y+130);g.lineTo(X+450,Y+130);g.stroke();
+      g.beginPath();g.moveTo(X+170,Y+80);g.lineTo(X+170,Y+270);g.stroke();
+      g.strokeStyle='rgba(120,180,230,.5)';g.lineWidth=2;
+      for(let i=0;i<26;i++){const rx=X+60+Math.random()*400,ry=Y+Math.random()*270;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-8,ry+22);g.stroke();}
+      g.fillStyle='#b23a3a';g.fillRect(X+200,Y+150,60,60);
+      g.fillStyle='rgba(255,255,255,.85)';g.font='bold 30px sans-serif';g.textAlign='left';
+      g.fillText('☔ 阳台的衣裳',X+40,Y+300);
+    }else if(evtId==='letter'){
+      g.fillStyle='#f2ead8';g.fillRect(X,Y,W,H);
+      g.fillStyle='#fff';g.fillRect(X+80,Y+70,360,220);g.strokeStyle='#c9b48a';g.lineWidth=4;g.strokeRect(X+80,Y+70,360,220);
+      g.fillStyle='#c9b48a';g.beginPath();g.moveTo(X+80,Y+70);g.lineTo(X+260,Y+185);g.lineTo(X+440,Y+70);g.closePath();g.fill();
+      g.strokeStyle='#b23a3a';g.lineWidth=5;
+      g.beginPath();g.moveTo(X+120,Y+245);g.lineTo(X+185,Y+175);g.moveTo(X+185,Y+175);g.lineTo(X+250,Y+245);g.stroke();
+      g.fillStyle='#8a6b3f';g.font='bold 28px serif';g.textAlign='center';
+      g.fillText('✉ 捎给阳间的家书',X+260,Y+150);
+      g.fillText('❤',X+185,Y+165);
+    }else if(evtId==='job'){
+      g.fillStyle='#3d4657';g.fillRect(X,Y,W,H);
+      g.fillStyle='#6b4a2a';g.fillRect(X+40,Y+220,440,40);
+      g.strokeStyle='#4a3c2a';g.lineWidth=6;g.beginPath();g.moveTo(X+40,Y+220);g.lineTo(X+480,Y+220);g.stroke();
+      g.fillStyle='#f4f1ea';g.fillRect(X+90,Y+120,110,80);g.fillRect(X+240,Y+120,110,80);g.fillRect(X+390,Y+120,110,80);
+      g.fillStyle='#8a6b3f';g.font='bold 26px sans-serif';g.textAlign='center';
+      g.fillText('引魂名录',X+145,Y+190);g.fillText('打伞簿',X+295,Y+190);g.fillText('夜巡册',X+445,Y+190);
+      g.fillStyle='rgba(255,255,255,.9)';g.font='bold 32px sans-serif';
+      g.fillText('📋 地府阴差新职',X+260,Y+90);
+    }else if(evtId==='photo'){
+      g.fillStyle='#c9d8c4';g.fillRect(X,Y,W,H);
+      g.fillStyle='#7a9c6a';g.beginPath();g.arc(X+460,Y+80,120,Math.PI,0);g.fill();
+      g.fillStyle='#5c4630';g.fillRect(X+440,Y+70,26,160);
+      drawPerson(g,X+160,Y+250,90,'#b23a3a');
+      drawPerson(g,X+260,Y+240,100,'#8a6b3f');
+      drawPerson(g,X+360,Y+255,80,'#4a7aa8');
+      drawPerson(g,X+210,Y+255,60,'#e8a13a');
+      drawPerson(g,X+310,Y+260,55,'#d06a9a');
+      g.fillStyle='rgba(255,255,255,.95)';g.font='bold 36px serif';g.textAlign='center';
+      g.fillText('👨‍👩‍👧 全家福',X+260,Y+70);
+    }else if(evtId==='debt'){
+      g.fillStyle='#e8dfd0';g.fillRect(X,Y,W,H);
+      g.fillStyle='#a8783a';g.beginPath();g.arc(X+260,Y+175,95,0,Math.PI*2);g.fill();
+      g.fillStyle='#8a5f28';g.fillRect(X+210,Y+95,100,28);
+      g.fillStyle='#ffd24a';g.font='46px serif';g.textAlign='center';
+      g.fillText('¥ ¥ ¥',X+260,Y+190);
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';
+      g.fillText('💰 欠王老三的一袋米钱',X+260,Y+315);
+    }else if(evtId==='pet'){
+      g.fillStyle='#ffe9d6';g.fillRect(X,Y,W,H);
+      g.fillStyle='#d9782e';g.beginPath();g.arc(X+260,Y+160,80,0,Math.PI*2);g.fill();
+      g.beginPath();g.moveTo(X+205,Y+105);g.lineTo(X+180,Y+55);g.lineTo(X+240,Y+95);g.closePath();g.fill();
+      g.beginPath();g.moveTo(X+315,Y+105);g.lineTo(X+340,Y+55);g.lineTo(X+280,Y+95);g.closePath();g.fill();
+      g.strokeStyle='#d9782e';g.lineWidth=10;g.lineCap='round';
+      g.beginPath();g.moveTo(X+330,Y+190);g.quadraticCurveTo(X+420,Y+150,X+400,Y+250);g.stroke();
+      g.fillStyle='#4a3220';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🐱 守在门口的老猫',X+260,Y+330);
+    }else if(evtId==='family'){
+      g.fillStyle='#efe6d8';g.fillRect(X,Y,W,H);
+      g.fillStyle='#6b4a2a';g.fillRect(X+230,Y+200,60,80);
+      g.fillStyle='#8a5f28';g.fillRect(X+215,Y+280,90,14);
+      g.strokeStyle='#8a6b3f';g.lineWidth=4;
+      g.beginPath();g.moveTo(X+245,Y+200);g.lineTo(X+245,Y+90);
+      g.moveTo(X+260,Y+200);g.lineTo(X+260,Y+95);
+      g.moveTo(X+275,Y+200);g.lineTo(X+275,Y+88);g.stroke();
+      g.fillStyle='#b23a3a';
+      g.beginPath();g.arc(X+245,Y+80,6,0,Math.PI*2);g.arc(X+260,Y+85,6,0,Math.PI*2);g.arc(X+275,Y+78,6,0,Math.PI*2);g.fill();
+      g.fillStyle='#8a6b3f';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🕯 老屋里的三炷香',X+260,Y+330);
+    }else if(evtId==='item'){
+      g.fillStyle='#5c4630';g.fillRect(X,Y,W,H);
+      g.fillStyle='#3a2f20';g.fillRect(X+60,Y+40,400,28);
+      g.fillStyle='#4a3c2a';g.fillRect(X+80,Y+120,80,22);g.fillRect(X+200,Y+135,80,22);g.fillRect(X+320,Y+110,80,22);
+      g.fillStyle='#ffd24a';g.beginPath();g.arc(X+150,Y+200,30,0,Math.PI*2);g.fill();
+      g.fillStyle='#ffd24a';g.beginPath();g.arc(X+350,Y+230,26,0,Math.PI*2);g.fill();
+      g.fillStyle='rgba(255,255,255,.9)';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('💰 房梁缝里的私房钱',X+260,Y+315);
+    }else if(evtId==='wish'){
+      g.fillStyle='#fff7dd';g.fillRect(X,Y,W,H);
+      g.fillStyle='#fff';g.fillRect(X+90,Y+100,340,170);g.strokeStyle='#c9b48a';g.lineWidth=4;g.strokeRect(X+90,Y+100,340,170);
+      g.fillStyle='#d4a017';g.fillRect(X+90,Y+100,120,170);
+      g.fillStyle='#fff';g.font='bold 30px sans-serif';g.fillText('★ 彩',X+150,Y+180);
+      g.fillStyle='#333';g.font='bold 44px serif';g.textAlign='center';
+      g.fillText('9 8 7 6 5',X+290,Y+185);
+      g.fillStyle='#d4a017';g.font='bold 34px sans-serif';
+      g.fillText('✨ 头等奖',X+260,Y+320);
+    }else if(evtId==='water'){
+      g.fillStyle='#e8f2e0';g.fillRect(X,Y,W,H);
+      g.fillStyle='#c99a5c';g.fillRect(X+80,Y+260,360,24);
+      g.fillStyle='#7a9c6a';g.beginPath();g.arc(X+170,Y+190,52,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+300,Y+160,62,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+410,Y+205,44,0,Math.PI*2);g.fill();
+      g.strokeStyle='#4a3220';g.lineWidth=5;g.lineCap='round';
+      g.beginPath();g.moveTo(X+170,Y+190);g.lineTo(X+170,Y+120);g.moveTo(X+300,Y+160);g.lineTo(X+300,Y+95);g.moveTo(X+410,Y+205);g.lineTo(X+410,Y+145);g.stroke();
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🪴 阳台的月季',X+260,Y+320);
+    }else if(evtId==='book'){
+      g.fillStyle='#efe8dc';g.fillRect(X,Y,W,H);
+      g.fillStyle='#8a4a2a';g.fillRect(X+110,Y+70,120,190);g.fillStyle='#4a7aa8';g.fillRect(X+250,Y+85,120,180);g.fillStyle='#6a7a3a';g.fillRect(X+390,Y+75,110,190);
+      g.strokeStyle='#c9b48a';g.lineWidth=4;
+      g.beginPath();g.moveTo(X+110,Y+160);g.lineTo(X+230,Y+160);g.moveTo(X+110,Y+200);g.lineTo(X+230,Y+200);
+      g.moveTo(X+250,Y+160);g.lineTo(X+370,Y+160);g.moveTo(X+250,Y+200);g.lineTo(X+370,Y+200);
+      g.moveTo(X+390,Y+160);g.lineTo(X+500,Y+160);g.moveTo(X+390,Y+200);g.lineTo(X+500,Y+200);g.stroke();
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('📖 一本等还的书',X+260,Y+315);
+    }else if(evtId==='cook'){
+      g.fillStyle='#f7e8d8';g.fillRect(X,Y,W,H);
+      g.fillStyle='#6b4a2a';g.fillRect(X+60,Y+240,400,40);
+      g.fillStyle='#d9782e';g.fillRect(X+150,Y+140,220,90);
+      g.fillStyle='#8a2a2a';g.fillRect(X+170,Y+110,60,30);g.fillRect(X+290,Y+110,60,30);
+      g.strokeStyle='#b23a3a';g.lineWidth=6;g.lineCap='round';
+      g.beginPath();g.arc(X+180,Y+140,22,Math.PI,0);g.arc(X+340,Y+140,22,Math.PI,0);g.stroke();
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🍲 锅里的红烧肉',X+260,Y+315);
+    }else if(evtId==='watch'){
+      g.fillStyle='#e6dcc8';g.fillRect(X,Y,W,H);
+      g.fillStyle='#c9b48a';g.beginPath();g.arc(X+260,Y+180,90,0,Math.PI*2);g.fill();
+      g.fillStyle='#f7f4ee';g.beginPath();g.arc(X+260,Y+180,70,0,Math.PI*2);g.fill();
+      g.strokeStyle='#333';g.lineWidth=4;
+      g.beginPath();g.moveTo(X+260,Y+180);g.lineTo(X+260,Y+130);
+      g.moveTo(X+260,Y+180);g.lineTo(X+295,Y+195);g.stroke();
+      g.fillStyle='#333';g.beginPath();g.arc(X+260,Y+180,6,0,Math.PI*2);g.fill();
+      g.fillStyle='#8a6b3f';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('⌚ 传下来的老手表',X+260,Y+320);
+    }else if(evtId==='song'){
+      g.fillStyle='#efe0f0';g.fillRect(X,Y,W,H);
+      g.fillStyle='#8a5f8a';g.fillRect(X+150,Y+130,220,120);
+      g.strokeStyle='#6a4a6a';g.lineWidth=4;g.strokeRect(X+150,Y+130,220,120);
+      g.fillStyle='#fff';g.font='bold 26px serif';g.textAlign='center';
+      g.fillText('♫ ♪ ♫',X+260,Y+195);
+      g.fillStyle='#6a4a6a';g.font='bold 30px sans-serif';
+      g.fillText('🎵 没唱完的歌',X+260,Y+315);
+    }else if(evtId==='umbrella'){
+      g.fillStyle='#d8e2ec';g.fillRect(X,Y,W,H);
+      g.strokeStyle='rgba(120,160,200,.6)';g.lineWidth=2;
+      for(let i=0;i<24;i++){const rx=X+50+Math.random()*420,ry=Y+30+Math.random()*260;g.beginPath();g.moveTo(rx,ry);g.lineTo(rx-6,ry+18);g.stroke();}
+      g.strokeStyle='#333';g.lineWidth=6;
+      g.beginPath();g.moveTo(X+260,Y+80);g.lineTo(X+260,Y+270);g.stroke();
+      g.fillStyle='#b23a3a';g.beginPath();g.arc(X+260,Y+80,75,Math.PI,0);g.fill();
+      g.fillStyle='#fff';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🌂 雨里的那把伞',X+260,Y+320);
+    }else if(evtId==='meat'){
+      g.fillStyle='#f2e6d0';g.fillRect(X,Y,W,H);
+      g.fillStyle='#a85a3a';g.fillRect(X+100,Y+110,80,150);
+      g.fillStyle='#8a4a2a';g.fillRect(X+230,Y+120,80,140);
+      g.fillStyle='#c96a3a';g.fillRect(X+360,Y+115,80,145);
+      g.strokeStyle='#6b4a2a';g.lineWidth=3;
+      g.beginPath();g.moveTo(X+140,Y+110);g.lineTo(X+140,Y+80);g.moveTo(X+270,Y+120);g.lineTo(X+270,Y+85);g.moveTo(X+400,Y+115);g.lineTo(X+400,Y+80);g.stroke();
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🥓 年关的腊味',X+260,Y+320);
+    }else if(evtId==='light'){
+      g.fillStyle='#2a2438';g.fillRect(X,Y,W,H);
+      g.fillStyle='#ffd24a';g.beginPath();g.arc(X+260,Y+170,70,0,Math.PI*2);g.fill();
+      g.fillStyle='#fff6d0';g.beginPath();g.arc(X+260,Y+170,40,0,Math.PI*2);g.fill();
+      g.fillStyle='#6b4a2a';g.fillRect(X+240,Y+280,40,20);
+      g.fillStyle='rgba(255,255,255,.9)';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🏮 门口那盏灯',X+260,Y+330);
+    }else if(evtId==='seed'){
+      g.fillStyle='#e8f0dc';g.fillRect(X,Y,W,H);
+      g.fillStyle='#7a6a50';g.fillRect(X+240,Y+200,40,70);
+      g.fillStyle='#7a9c6a';g.beginPath();g.arc(X+260,Y+150,80,Math.PI*2,0);g.fill();
+      g.strokeStyle='#5c4630';g.lineWidth=4;
+      g.beginPath();g.moveTo(X+260,Y+230);g.lineTo(X+330,Y+140);g.moveTo(X+260,Y+230);g.lineTo(X+200,Y+160);g.stroke();
+      g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🌱 刚种下的桂花',X+260,Y+320);
+    }else if(evtId==='tea'){
+      g.fillStyle='#f0e8dc';g.fillRect(X,Y,W,H);
+      g.fillStyle='#8a5f28';g.fillRect(X+120,Y+150,280,120);
+      g.strokeStyle='#6b4a2a';g.lineWidth=4;g.strokeRect(X+120,Y+150,280,120);
+      g.strokeStyle='#6b4a2a';g.lineWidth=6;
+      g.beginPath();g.moveTo(X+140,Y+230);g.arc(X+180,Y+230,40,0,Math.PI,false);g.moveTo(X+260,Y+230);g.arc(X+300,Y+230,40,0,Math.PI,false);g.moveTo(X+370,Y+230);g.arc(X+400,Y+230,40,0,Math.PI,false);g.stroke();
+      g.fillStyle='#b23a3a';g.font='bold 30px sans-serif';g.textAlign='center';
+      g.fillText('🍵 清晨那壶早茶',X+260,Y+315);
+    }else{
+      g.fillStyle='#4a7aa8';g.fillRect(X,Y,W,H);
+      g.fillStyle='rgba(255,255,255,.9)';g.font='bold 40px serif';g.textAlign='center';
+      g.fillText(evt&&evt.icon?evt.icon:'🙏',X+260,Y+200);
+    }
+    g.restore();
+    g.fillStyle='#f7f4ee';g.fillRect(X,Y+330,W,50);
+    g.fillStyle='#7a6a50';g.font='22px serif';g.textAlign='center';g.textBaseline='middle';
+    g.fillText('📸 '+(evt&&evt.cap?evt.cap:''),X+260,Y+355);
+    return cvs.toDataURL('image/png');
+  }catch(e){return null;}
+}
+
+function pickHelpEvent(excludeId){
+  const pool=HELP_EVENTS.filter(e=>e.id!==excludeId);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+
+function pendingHelpNotify(){
+  pendingHelpTimers.forEach(t=>clearTimeout(t));
+  pendingHelpTimers=[];
+}
+
+function queueHelpResult(soul,evt,photo){
+  const delay=3000+Math.random()*4000;
+  const t=setTimeout(()=>showHelpResult(soul,evt,photo),delay);
+  pendingHelpTimers.push(t);
+}
+
+function showHelpResult(soul,evt,photo){
+  const modal=document.getElementById('help-result-modal');
+  const title=document.getElementById('help-result-title');
+  const content=document.getElementById('help-result-content');
+  const res=evt.results[Math.floor(Math.random()*evt.results.length)];
+  title.textContent=`📸 事件后续 · ${soul.name}`;
+  const eventPhoto=renderEventPhoto(evt);
+  let photoHtml='';
+  if(eventPhoto)photoHtml=`<img class="help-photo" src="${eventPhoto}" alt="${evt.cap}"><div class="help-photo-cap">📸 ${evt.cap}</div>`;
+  else if(photo)photoHtml=`<img class="help-photo" src="${photo}" alt="求助画面"><div class="help-photo-cap">📸 事发时的画面</div>`;
+  let rewardHtml=res.r>0?`<div class="section" style="text-align:center;color:#d4a017"><b>+${res.r} 冥币 · 感激之情</b></div>`:res.r<0?`<div class="section" style="text-align:center;color:#c45555"><b>${res.r} 冥币 · 心情低落</b></div>`:'';
+  content.innerHTML=`${photoHtml}<div class="section"><b>${soul.name}的求助后续：</b><br>${res.t}</div>${rewardHtml}<div class="section" style="text-align:center"><button class="lobby-btn primary" onclick="closeModal('help-result-modal')">✅ 知道了</button></div>`;
+  totalScore+=res.r;
+  if(res.r>0){PROGRESS.total冥币+=res.r;PROGRESS.balance+=res.r;}
+  saveProgress(PROGRESS);
+  updateUI();
+  if(soul&&soulMood&&res.g)changeMood(res.g);
+  modal.classList.add('show');
+}
+
+function openHelpAsk(soul,scene){
+  const modal=document.getElementById('help-modal');
+  const evt=pickHelpEvent();
+  document.getElementById('help-soul').textContent=`${soul.name} · ${soul.title}`;
+  document.getElementById('help-ask').textContent=`"${evt.ask}"`;
+  document.getElementById('help-cost').textContent=evt.cost;
+  const snap=document.getElementById('help-snap');
+  const photo=renderEventPhoto(evt);
+  if(photo){snap.src=photo;snap.style.display='block';}else{snap.style.display='none';}
+  window._pendingHelp={soul,evt,photo};
+  const yes=document.getElementById('help-yes-btn');
+  yes.onclick=()=>acceptHelp(window._pendingHelp,scene);
+  document.getElementById('help-no-btn').onclick=()=>rejectHelp(window._pendingHelp,scene);
+  modal.classList.add('show');
+}
+
+function acceptHelp(pending,scene){
+  const cost=pending.evt.cost;
+  if(PROGRESS.balance<cost){showFeedback('冥币不足','先去挣点冥币吧');return;}
+  PROGRESS.balance-=cost; saveProgress(PROGRESS); updateUI();
+  closeModal('help-modal');
+  showFeedback('已接下求助','事情办妥后会通知你');
+  queueHelpResult(pending.soul,pending.evt,pending.photo);
+  if(scene==='trial'){
+    helpEventDone=true;
+    setTimeout(()=>renderQButtons(currentSoul,askedQuestions),500);
+  }
+}
+
+function rejectHelp(pending,scene){
+  closeModal('help-modal');
+  showFeedback('婉拒了求助','它失落地走开了');
+  if(scene==='trial'){
+    helpEventDone=true;
+    setTimeout(()=>renderQButtons(currentSoul,askedQuestions),500);
+  }
+}
+
+function maybeTriggerTrialHelp(){
+  if(!isPlaying||judgingMode||!soulArrived||!currentSoul||helpEventDone)return;
+  if(askedQuestions.length>=2&&Math.random()<.5){
+    helpEventDone=true;
+    openHelpAsk(currentSoul,'trial');
+  }
+}
+
+function maybeLobbyHelp(){
+  const candidates=lobbySouls.filter(s=>!s.processed&&!s.helpPending);
+  if(candidates.length===0)return;
+  const target=candidates[Math.floor(Math.random()*candidates.length)];
+  const evt=pickHelpEvent();
+  target.helpEvt=evt;
+  target.helpPending=true;
+  const label=target.label;
+  if(label){
+    label.innerHTML=`<div class="sl-text">${target.soulData.name} <span style="color:#d4a017">🙏</span></div><div class="sl-sub">${HELP_TRIGGERS[Math.floor(Math.random()*HELP_TRIGGERS.length)]||'有事相求'}</div>`;
+    label.style.border='1px solid rgba(212,160,23,.5)';
+    label.style.background='rgba(255,250,230,.98)';
+  }
+}
+
+function maybeOfficeHelp(){
+  if(!officeVisitor||!officeVisitorGroup)return;
+  const evt=pickHelpEvent();
+  const snap=renderEventPhoto(evt);
+  window._pendingHelp={soul:officeVisitor.soul,evt,photo:snap};
+  const title=document.getElementById('task-title');
+  const content=document.getElementById('task-content');
+  title.textContent=`🙏 ${officeVisitor.soul.name}的求助`;
+  let photoHtml=snap?`<img class="help-snap" src="${snap}" style="width:100%;max-height:28vh;object-fit:cover;border-radius:6px"><div class="help-photo-cap">📸 ${evt.cap}</div>`:'';
+  content.innerHTML=`${photoHtml}<div class="section"><b>"${evt.ask}"</b></div><div class="section" style="text-align:center"><button class="lobby-btn primary" onclick="acceptOfficeHelp()">💰 帮忙（${evt.cost}冥币）</button><button class="lobby-btn" onclick="rejectOfficeHelp()">❌ 婉拒</button></div>`;
+  document.getElementById('task-modal').classList.add('show');
+}
+
+window.acceptOfficeHelp=function(){
+  const p=window._pendingHelp;if(!p)return;
+  if(PROGRESS.balance<p.evt.cost){showFeedback('冥币不足','先去挣点冥币吧');return;}
+  PROGRESS.balance-=p.evt.cost; saveProgress(PROGRESS); updateUI();
+  closeModal('task-modal');
+  showFeedback('已接下求助','事情办妥后会通知你');
+  queueHelpResult(p.soul,p.evt,p.photo);
+  setTimeout(()=>{if(officeVisitor&&officeVisitor.type!=='love')showOfficeDialog(officeVisitor);},1000);
+};
+
+window.rejectOfficeHelp=function(){
+  closeModal('task-modal');
+  showFeedback('婉拒了求助','它失落地离开了');
+  setTimeout(()=>{if(officeVisitor&&officeVisitor.type!=='love')showOfficeDialog(officeVisitor);},1000);
+};
+
+// ===== Init =====
+buildLobby();buildTrialRoom();buildOffice();
+playerModel=createPlayerModel();
+playerModel.position.set(playerPos.x,playerPos.y,playerPos.z);
+scene.add(playerModel);
+setupPointerLock();
+updateSkillUI();
+// 自动隐藏加载界面，显示开始画面
+setTimeout(()=>{
+  document.getElementById('loading').classList.add('hidden');
+}, 1200);
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  labelRenderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+console.log('🏛️ 阴间规划局 v5 — 龙椅审判版');
+console.log('💬 聊天 · 🔧 法器 · 💰 冥币 · 💕 相亲 · 👁️ 视察 · 📋 事务 · 🚶 WASD移动');
+</script>
+</body>
+</html>
