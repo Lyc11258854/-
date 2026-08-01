@@ -2590,7 +2590,7 @@ function handleCenterClick(){
     const soulMeshes=[];
     lobbySouls.forEach(s=>{if(s.group&&!s.processed){s.group.traverse(c=>{if(c.isMesh)soulMeshes.push({mesh:c,soul:s});});}});
     const soulHits=raycaster.intersectObjects(soulMeshes.map(m=>m.mesh));
-    if(soulHits.length>0){const hitSoul=soulMeshes.find(m=>m.mesh===soulHits[0].object);if(hitSoul){if(hitSoul.soul.helpPending&&hitSoul.soul.helpEvt)openHelpAsk(hitSoul.soul.soulData,'lobby');else showBio(hitSoul.soul.soulData);}}
+    if(soulHits.length>0){const hitSoul=soulMeshes.find(m=>m.mesh===soulHits[0].object);if(hitSoul){if(hitSoul.soul.helpPending&&hitSoul.soul.helpEvt)openHelpAsk(hitSoul.soul.soulData,'lobby',hitSoul.soul.helpEvt);else showBio(hitSoul.soul.soulData);}}
     officeWorkers.forEach(w=>{
       const workerMeshes=[];w.group.traverse(c=>{if(c.isMesh)workerMeshes.push(c);});
       const workerHits=raycaster.intersectObjects(workerMeshes);
@@ -2992,9 +2992,9 @@ function showHelpResult(soul,evt,photo){
   modal.classList.add('show');
 }
 
-function openHelpAsk(soul,scene){
+function openHelpAsk(soul,scene,evtOverride){
   const modal=document.getElementById('help-modal');
-  const evt=pickHelpEvent();
+  const evt=evtOverride||pickHelpEvent();
   document.getElementById('help-soul').textContent=`${soul.name} · ${soul.title}`;
   document.getElementById('help-ask').textContent=`"${evt.ask}"`;
   document.getElementById('help-cost').textContent=evt.cost;
