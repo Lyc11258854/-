@@ -2641,6 +2641,12 @@ function handleCenterClick(){
 document.addEventListener('keydown',(e)=>{
   const k=e.key.toLowerCase();
   if(keys.hasOwnProperty(k)){keys[k]=true;e.preventDefault();}
+  if(k==='m'){
+    PROGRESS.balance+=1000;PROGRESS['total冥币']=(PROGRESS['total冥币']||0)+1000;
+    saveProgress(PROGRESS);updateUI();
+    showFeedback('💰 +1000 冥币','按 M 加钱（作弊）');
+    return;
+  }
   if((e.key==='e'||e.key==='E')&&isPlaying&&!judgingMode&&gameState==='trial'){
     for(let i=0;i<3;i++){const next=(activeSkill+1+i)%3;if(skillUses[next]>0){activeSkill=next;break;}}
     updateSkillUI();
