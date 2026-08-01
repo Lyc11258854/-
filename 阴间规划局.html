@@ -1402,6 +1402,7 @@ let gameState='lobby', currentDay=1, soulGroup=null, soulArrived=false, soulFloa
 let playerModel=null, playerPos=new THREE.Vector3(0,0,12), playerIsMoving=false;
 let currentSoul=null, soulDesire=0, soulArms=null, soulColor=0x88aaff;
 let askedQuestions=[], judgingMode=false, isAnimating=false, soulNumber=0;
+let wishBlocking=false;
 let totalScore=0, happyCount=0, skillUsedCount=0, harshCount=0;
 let friendCount=0, enemyCount=0, relationship=null;
 let soulSkillUseCount=0, autoTimer=0, autoIdx=0, autoTriggers=0;
@@ -1851,6 +1852,7 @@ function startJudging(soul){
   if(judgingMode)return;
   // 审判完成时，若遗愿未了，鬼先开口请求办公室面谈
   if(soul.concern&&!soul.concernDone){
+    wishBlocking=true;
     showAnswer(`"大人，请留步！小的还有一事相求…"`,`${soul.name} · 临别之际`);
     speak('大人，小的还有一事相求，办公室谈好么。',soul.voicePitch,soul.voiceRate);
     const cont=document.getElementById('question-list');
@@ -1866,6 +1868,7 @@ function startJudging(soul){
 }
 
 function proceedJudging(soul){
+  wishBlocking=false;
   judgingMode=true;
   showAnswer(`"${getLine(soul,'last')}"`,`${soul.name}的最后遗言`);
   const cont=document.getElementById('question-list');
@@ -2050,6 +2053,7 @@ let _wishResume=null;
 
 function goOfficeForWish(soul){
   if(!soul||!soul.concern||soul.concernDone||isTransitioning)return;
+  wishBlocking=false;
   const task={id:Date.now(),type:'wish',soul:soul,desc:soul.concern,resolved:false};
   _wishResume={soul:soul,askedQuestions:askedQuestions.slice(),mengpoUsed:mengpoUsed,soulDesire:soulDesire,soulMood:soulMood,preTrial:askedQuestions.length===0};
   currentSoul=null; judgingMode=false; isPlaying=false;
@@ -2322,6 +2326,8 @@ function updateSkillUI(){
 let speechEnabled=true;
 function speak(text,pitch=1,rate=1){
   if(!speechEnabled||!text||!window.speechSynthesis)return;
+  const fix={'畜牲':'chu sheng','畜':'chu'};
+  for(const k in fix){if(text.includes(k))text=text.split(k).join(fix[k]);}
   window.speechSynthesis.cancel();
   const u=new SpeechSynthesisUtterance(text);
   u.lang='zh-CN';u.pitch=pitch;u.rate=rate;
@@ -2608,6 +2614,7 @@ function handleCenterClick(){
         const idx=trialHoles.findIndex(h=>h.clickTarget===hit);
         if(idx!==-1){
           if(judgingMode){isAnimating=true;processJudgment(currentSoul,idx);}
+          else if(wishBlocking){proceedJudging(currentSoul);}
           else{showFeedback(`🚪 ${trialHoles[idx].data.icon} ${trialHoles[idx].data.id}门 — ${trialHoles[idx].data.desc}`);}
           return;
         }
@@ -2819,12 +2826,31 @@ function renderEventPhoto(evt){
       g.fillStyle='#6b4a2a';g.font='bold 30px sans-serif';
       g.fillText('💰 欠王老三的一袋米钱',X+260,Y+315);
     }else if(evtId==='pet'){
-      g.fillStyle='#ffe9d6';g.fillRect(X,Y,W,H);
-      g.fillStyle='#d9782e';g.beginPath();g.arc(X+260,Y+160,80,0,Math.PI*2);g.fill();
-      g.beginPath();g.moveTo(X+205,Y+105);g.lineTo(X+180,Y+55);g.lineTo(X+240,Y+95);g.closePath();g.fill();
-      g.beginPath();g.moveTo(X+315,Y+105);g.lineTo(X+340,Y+55);g.lineTo(X+280,Y+95);g.closePath();g.fill();
-      g.strokeStyle='#d9782e';g.lineWidth=10;g.lineCap='round';
-      g.beginPath();g.moveTo(X+330,Y+190);g.quadraticCurveTo(X+420,Y+150,X+400,Y+250);g.stroke();
+      g.fillStyle='#cfe0c8';g.fillRect(X,Y,W,H);
+      g.fillStyle='#6b4a2a';g.fillRect(X+330,Y+80,120,240);
+      g.fillStyle='#8a5f28';g.fillRect(X+342,Y+92,96,228);
+      g.fillStyle='#d4a017';g.fillRect(X+412,Y+195,12,12);
+      g.fillStyle='#333';g.fillRect(X+415,Y+190,6,22);
+      g.fillStyle='#fff';g.fillRect(X+315,Y+298,152,28);
+      g.fillStyle='#c99a5c';g.beginPath();g.arc(X+340,Y+312,9,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+370,Y+312,9,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+400,Y+312,9,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+430,Y+312,9,0,Math.PI*2);g.fill();
+      g.fillStyle='#9aa0a8';
+      g.beginPath();g.arc(X+175,Y+235,55,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+175,Y+180,32,0,Math.PI*2);g.fill();
+      g.beginPath();g.moveTo(X+155,Y+155);g.lineTo(X+148,Y+120);g.lineTo(X+172,Y+148);g.closePath();g.fill();
+      g.beginPath();g.moveTo(X+195,Y+155);g.lineTo(X+202,Y+120);g.lineTo(X+178,Y+148);g.closePath();g.fill();
+      g.fillStyle='#333';
+      g.beginPath();g.arc(X+165,Y+178,4,0,Math.PI*2);g.fill();
+      g.beginPath();g.arc(X+185,Y+178,4,0,Math.PI*2);g.fill();
+      g.strokeStyle='#333';g.lineWidth=2;
+      g.beginPath();g.moveTo(X+150,Y+190);g.lineTo(X+130,Y+184);g.moveTo(X+150,Y+194);g.lineTo(X+132,Y+196);g.stroke();
+      g.beginPath();g.moveTo(X+200,Y+190);g.lineTo(X+220,Y+184);g.moveTo(X+200,Y+194);g.lineTo(X+218,Y+196);g.stroke();
+      g.fillStyle='#9aa0a8';
+      g.beginPath();g.ellipse(X+175,Y+285,26,14,0,0,Math.PI*2);g.fill();
+      g.strokeStyle='#9aa0a8';g.lineWidth=8;g.lineCap='round';
+      g.beginPath();g.moveTo(X+225,Y+235);g.quadraticCurveTo(X+280,Y+230,X+275,Y+180);g.stroke();
       g.fillStyle='#4a3220';g.font='bold 30px sans-serif';g.textAlign='center';
       g.fillText('🐱 守在门口的老猫',X+260,Y+330);
     }else if(evtId==='family'){
