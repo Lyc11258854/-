@@ -2146,6 +2146,7 @@ function backFromWishOffice(){
   officeVisitor=null;
   if(gameState!=='office-wish')return;
   const wasPreTrial=_wishResume&&_wishResume.preTrial;
+  const wishDone=_wishResume&&_wishResume.soul&&_wishResume.soul.concernDone;
   if(_wishResume){
     const rs=_wishResume;
     currentSoul=rs.soul;
@@ -2160,7 +2161,7 @@ function backFromWishOffice(){
   if(soulGroup&&currentSoul){
     soulArrived=true;
     showTrialUI();
-    if(wasPreTrial&&currentSoul.concernDone){
+    if(wishDone){
       startJudging(currentSoul);
     }else{
       renderQButtons(currentSoul,askedQuestions);
