@@ -350,6 +350,7 @@ class CSS2DRenderer {
   <div id="top-bar">
     <div style="font-size:1.8vw;color:#c45555">判官办公室</div>
     <div style="font-size:1.2vw;color:#888">点击鬼魂处理事务</div>
+    <div id="office-waiting" style="display:none;font-size:1.2vw;color:#e08080">💕 等待配对 <b id="office-waiting-num">0</b> 对</div>
   </div>
   <div id="office-panel">
     <button class="lobby-btn" id="btn-office-back">← 返回大厅</button>
@@ -1408,6 +1409,8 @@ let soulMood='calm', mengpoUsed=false, comboCount=0, maxCombo=0;
 let fireEyesActive=false, activeSkill=0, skillUses=[3,2,1], skillEffects=[];
 let allSoulsQueue=[], soulIndex=0;
 let lobbySouls=[], lobbyTasks=[], couples=[], dayEndTasks=[];
+let officeWaiting=[];
+let officeWaiters=[];
 let audienceMembers=[], whisperTimer=0, loveProposals=[];
 let isPlaying=false;
 let pendingHelpTimers=[];
@@ -1426,6 +1429,13 @@ function switchScene(newScene){
   // Save position when leaving lobby
   if(currentScene===SCENES.LOBBY&&newScene!==SCENES.LOBBY){
     savedLobbyPos={x:playerPos.x,z:playerPos.z,yaw,prev:newScene};
+  }
+  if(newScene===SCENES.OFFICE&&currentScene!==SCENES.OFFICE){
+    updateOfficeWaitingUI();
+    spawnOfficeWaiters();
+  }
+  if(currentScene===SCENES.OFFICE&&newScene!==SCENES.OFFICE){
+    clearOfficeWaiters();
   }
   currentScene=newScene;
   lobbyGroup.visible=newScene===SCENES.LOBBY;
@@ -1486,6 +1496,50 @@ function updateLobbyInfo(){
   }
   el.innerHTML=html;
   document.getElementById('lobby-info').classList.toggle('show',lobbyTasks.length>0||couples.length>0);
+}
+
+function updateOfficeWaitingUI(){
+  const el=document.getElementById('office-waiting');
+  const num=document.getElementById('office-waiting-num');
+  if(!el||!num)return;
+  num.textContent=officeWaiting.length;
+  el.style.display=officeWaiting.length>0?'block':'none';
+  const b=document.getElementById('btn-office');
+  if(b)b.textContent=officeWaiting.length>0?`📋 处理事务（${officeWaiting.length} 对等待）`:'📋 处理事务';
+}
+
+function getOfficeWaitingCount(){
+  return officeWaiting.length;
+}
+
+// 相亲成功的鬼在办公室沙发上等待
+function spawnOfficeWaiters(){
+  clearOfficeWaiters();
+  const sofaSlots=[
+    {x:-3.5,z:-4},{x:-2.5,z:-4},{x:2.5,z:-4},{x:3.5,z:-4},
+    {x:-4.5,z:-5.5},{x:-3.5,z:-5.5},{x:3.5,z:-5.5},{x:4.5,z:-5.5}
+  ];
+  let slot=0;
+  officeWaiting.forEach((w,wi)=>{
+    [w.soul,w.partner].forEach(sd=>{
+      if(slot>=sofaSlots.length)return;
+      const hue=Math.random();
+      const color=new THREE.Color().setHSL(hue,0.5,0.5).getHex();
+      const g=createHumanoidSoul(color,slot%6,sd.correctPath,sd);
+      const p=sofaSlots[slot];
+      g.position.set(p.x,0,p.z);
+      g.scale.set(.5,.5,.5);
+      g.userData={type:'waiter',waitIndex:wi,soul:sd,partner:sd===w.soul?w.partner:w.soul};
+      officeGroup.add(g);
+      officeWaiters.push(g);
+      slot++;
+    });
+  });
+}
+
+function clearOfficeWaiters(){
+  officeWaiters.forEach(g=>officeGroup.remove(g));
+  officeWaiters=[];
 }
 
 // ===== Audience System =====
@@ -1557,7 +1611,30 @@ function showLoveProposal(audienceMember){
   const label=new CSS2DObject(bubble);label.position.set(0,2,0);
   audienceMember.group.add(label);
   setTimeout(()=>{if(audienceMember.group)audienceMember.group.remove(label);},5000);
+  // 台上鬼转身看向提问的旁听鬼，并回应
+  if(soulGroup){
+    const px=audienceMember.group.position.x, pz=audienceMember.group.position.z;
+    soulLookAt(px,pz,2.5);
+    const resp=['嗯？还有人看上我了？','哦？姑娘/兄台请说。','哟，还有这种事？','你……是认真的吗？','哈，死了还能遇到看对眼的？'][Math.floor(Math.random()*5)];
+    setTimeout(()=>{
+      const rb=document.createElement('div');
+      rb.className='love-bubble';
+      rb.innerHTML=`<div class="lb-text">${target.name}：${resp}</div>`;
+      const rl=new CSS2DObject(rb);rl.position.set(0,1.8,0);
+      if(soulGroup)soulGroup.add(rl);
+      setTimeout(()=>{if(soulGroup)soulGroup.remove(rl);},4000);
+      showAnswer(`"${resp}"`,`${target.name}看向${soul.name}`);
+    },600);
+  }
   loveProposals.push({from:soul,to:target,time:Date.now(),accepted:null});
+}
+
+// 台上鬼转身看向指定世界坐标，holdS 秒后转回正面
+let soulTurn=null;
+function soulLookAt(worldX,worldZ,holdS=2){
+  if(!soulGroup)return;
+  const dx=worldX, dz=worldZ-3;
+  soulTurn={to:Math.atan2(dx,dz),holdS:holdS,t:0,backTo:Math.PI};
 }
 
 function acceptLoveProposal(proposal){
@@ -1567,7 +1644,9 @@ function acceptLoveProposal(proposal){
   const lobbyIdx=lobbySouls.findIndex(s=>s===proposal.from);
   if(lobbyIdx!==-1)lobbySouls.splice(lobbyIdx,1);
   couples.push([proposal.from,proposal.to]);
-  showFeedback(`${proposal.from.name} & ${proposal.to.name} 相亲成功 💕`,'他们已前往大厅等候');
+  officeWaiting.push({soul:proposal.from,partner:proposal.to});
+  updateOfficeWaitingUI();
+  showFeedback(`${proposal.from.name} & ${proposal.to.name} 相亲成功 💕`,'他们已前往办公室等候');
   if(currentSoul===proposal.to)setTimeout(()=>endCurrentTrial(),2000);
 }
 
@@ -1595,6 +1674,15 @@ function soulEnter(soul){
   if(soul.enemy)prefix='😈 哟，你也落我手里了？';
   if(soul.meangirl){const other=soul.name==='小蝶'?'小美':'小蝶';prefix=`💅 姐妹驾到！${other}来没来？`;}
   const line=getLine(soul,'enter');
+  if(soul.concern&&!soul.concernDone){
+    showAnswer(`"大人，小的有事找您，办公室谈好么…"`,`${prefix} ${soul.name} · ${soul.title}`);
+    speak('大人，小的有事找您，办公室谈好么。',soul.voicePitch,soul.voiceRate);
+    askedQuestions=[];
+    renderOfficeWishEntry(soul);
+    changeMood('nervous');
+    spawnAudience();
+    return;
+  }
   showAnswer(`"${line}"`,`${prefix} ${soul.name} · ${soul.title}`);
   speak(line,soul.voicePitch,soul.voiceRate);
   askedQuestions=[];
@@ -1602,6 +1690,16 @@ function soulEnter(soul){
   else renderQButtons(soul,[]);
   changeMood('nervous');
   spawnAudience();
+}
+
+function renderOfficeWishEntry(soul){
+  const cont=document.getElementById('question-list');
+  cont.innerHTML=`<button class="q-btn" id="wish-go-office" style="border-color:#7a9c6a!important;color:#5a7a3a!important">💼 好，办公室谈</button><button class="q-btn" id="wish-no-office" style="border-color:#999!important;color:#999!important">📋 先在这聊，遗愿稍后再说</button>`;
+  document.getElementById('wish-go-office').addEventListener('click',()=>goOfficeForWish(soul));
+  document.getElementById('wish-no-office').addEventListener('click',()=>{
+    if(soul.intro&&!soul.introDone){renderIntroReplies(soul);}
+    else renderQButtons(soul,[]);
+  });
 }
 
 function renderIntroReplies(soul){
@@ -1660,6 +1758,7 @@ function renderQButtons(soul,asked){
   if(relationship==='enemy')html+=`<button class="q-btn harsh" id="harsh-btn">👊 开怼！</button>`;
   if(relationship==='meangirl')html+=`<button class="q-btn harsh" id="harsh-btn">💅 姐妹也敢怼</button>`;
   if(soul.concern&&!soul.concernDone&&asked.includes('worry'))html+=`<button class="q-btn" id="divine-btn" style="border-color:#d4a017!important;color:#d4a017!important">🔮 运用神力</button>`;
+  if(soul.concern&&!soul.concernDone)html+=`<button class="q-btn" id="office-wish-btn" style="border-color:#7a9c6a!important;color:#5a7a3a!important">💼 大人，小的有事找您，办公室谈好么</button>`;
   if(!mengpoUsed&&asked.length>=1)html+=`<button class="q-btn" id="mengpo-btn" style="border-color:#6a6!important;color:#6a6!important">🍵 孟婆汤</button>`;
   if(asked.length>=2)html+=`<button class="q-btn judge" id="judge-btn">⚖️ 送走</button>`;
   const pendingLove=loveProposals.find(p=>p.to===soul&&p.accepted===null);
@@ -1672,6 +1771,8 @@ function renderQButtons(soul,asked){
   if(hb)hb.addEventListener('click',()=>harshInteract(soul));
   const db=document.getElementById('divine-btn');
   if(db)db.addEventListener('click',()=>useDivinePower(soul));
+  const owb=document.getElementById('office-wish-btn');
+  if(owb)owb.addEventListener('click',()=>goOfficeForWish(soul));
   const mb=document.getElementById('mengpo-btn');
   if(mb)mb.addEventListener('click',()=>useMengpoSoup(soul));
   const jb=document.getElementById('judge-btn');
@@ -1746,7 +1847,8 @@ function useMengpoSoup(soul){
 
 function useDivinePower(soul){
   const cost=15;
-  if(PROGRESS.balance<cost||!soul.concern||soul.concernDone)return;
+  if(!soul.concern||soul.concernDone)return;
+  if(PROGRESS.balance<cost){showFeedback('冥币不足','运用神力需要 15 冥币');return;}
   PROGRESS.balance-=cost; PROGRESS.wishes+=1; soul.concernDone=true;
   saveProgress(PROGRESS);
   const result=soul.concernResult||'已用神力为你完成了心愿';
@@ -1937,6 +2039,17 @@ function inspectWorkers(){
 
 // ===== Office System =====
 let officeVisitor=null, officeVisitorGroup=null;
+let _wishResume=null;
+
+function goOfficeForWish(soul){
+  if(!soul||!soul.concern||soul.concernDone||isTransitioning)return;
+  const task={id:Date.now(),type:'wish',soul:soul,desc:soul.concern,resolved:false};
+  _wishResume={soul:soul,askedQuestions:askedQuestions.slice(),mengpoUsed:mengpoUsed,soulDesire:soulDesire,soulMood:soulMood,preTrial:askedQuestions.length===0};
+  currentSoul=null; judgingMode=false; isPlaying=false;
+  hideTrialUI();gameState='office-wish';
+  enterOfficeWithAnimation();
+  setTimeout(()=>handleOfficeTask(task),1200);
+}
 
 function handleOfficeTask(task){
   officeVisitor=task;
@@ -1946,10 +2059,77 @@ function handleOfficeTask(task){
   officeVisitorGroup=createHumanoidSoul(color,0,task.soul.correctPath,task.soul);
   officeVisitorGroup.position.set(0,0,3); officeVisitorGroup.scale.set(.6,.6,.6);
   officeGroup.add(officeVisitorGroup);
-  if(task.type!=='love'&&Math.random()<.55){
+  if(task.type==='wish'){
+    showOfficeWishDialog(task);
+  } else if(task.type!=='love'&&Math.random()<.55){
     maybeOfficeHelp();
   }else{
     showOfficeDialog(task);
+  }
+}
+
+function showOfficeWishDialog(task){
+  const modal=document.getElementById('task-modal');
+  const title=document.getElementById('task-title');
+  const content=document.getElementById('task-content');
+  const soul=task.soul;
+  title.textContent=`💼 遗愿面谈 · ${soul.name}`;
+  let html=`<div class="section"><b>"${soul.name}"（${soul.title}）低头禀告：</b><br><span style="font-family:'STKaiti','KaiTi',serif;color:#5a7a3a;font-size:1.3vw">"大人，小的有事找您…${soul.concern}"</span></div><div class="section"><b>📖 生平</b><br>${soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${soul.personality||'暂无记录'}</div>`;
+  if(PROGRESS.balance>=15){
+    html+=`<div class="section" style="text-align:center"><button class="lobby-btn primary" id="wish-divine-btn">🔮 运用神力了却遗愿（15冥币）</button></div>`;
+  }else{
+    html+=`<div class="section" style="text-align:center;color:#c45555">冥币不足（需 15），先去大厅挣点冥币再来吧</div>`;
+  }
+  html+=`<div class="section" style="text-align:center"><button class="lobby-btn" id="wish-back-btn">↩️ 记下此事，先回审判</button></div>`;
+  content.innerHTML=html; modal.classList.add('show');
+  const db=document.getElementById('wish-divine-btn');
+  if(db)db.addEventListener('click',()=>resolveWishInOffice(task));
+  document.getElementById('wish-back-btn').addEventListener('click',()=>backFromWishOffice());
+}
+
+function resolveWishInOffice(task){
+  const soul=task.soul;
+  if(PROGRESS.balance<15){showFeedback('冥币不足','运用神力需要 15 冥币');return;}
+  PROGRESS.balance-=15; PROGRESS.wishes+=1; soul.concernDone=true;
+  saveProgress(PROGRESS);
+  closeModal('task-modal');
+  showAnswer(`"${soul.concernResult||'已用神力为你了却遗愿'}"`,`🔮 神力显灵 · ${soul.name}`);
+  speak(soul.concernResult||'已用神力为你了却遗愿',soul.voicePitch,soul.voiceRate);
+  changeMood('grateful'); updateUI();
+  setTimeout(()=>backFromWishOffice(),1800);
+}
+
+function backFromWishOffice(){
+  closeModal('task-modal');
+  if(officeVisitorGroup){officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;}
+  officeVisitor=null;
+  if(gameState!=='office-wish')return;
+  const wasPreTrial=_wishResume&&_wishResume.preTrial;
+  if(_wishResume){
+    const rs=_wishResume;
+    currentSoul=rs.soul;
+    askedQuestions=rs.askedQuestions;
+    mengpoUsed=rs.mengpoUsed;
+    soulDesire=rs.soulDesire;
+    soulMood=rs.soulMood;
+  }
+  _wishResume=null;
+  gameState='trial';isPlaying=true;
+  switchScene(SCENES.TRIAL);
+  if(soulGroup&&currentSoul){
+    soulArrived=true;
+    showTrialUI();
+    if(wasPreTrial&&currentSoul.concernDone){
+      startJudging(currentSoul);
+    }else{
+      renderQButtons(currentSoul,askedQuestions);
+      showAnswer(`"${getLine(currentSoul,'enter')}"`,currentSoul.name);
+    }
+  }else if(currentSoul){
+    spawnSoul(currentSoul);
+    showTrialUI();
+  }else{
+    nextSoul();
   }
 }
 
@@ -1973,6 +2153,10 @@ window.approveLove=function(taskId){
   task.resolved=true;
   showFeedback(`${task.soul.name} & ${task.partner.name} 配对成功！`,'它们将一起前往下一世 💕');
   const idx=lobbyTasks.findIndex(t=>t.id===taskId);if(idx!==-1)lobbyTasks.splice(idx,1);
+  officeWaiting=officeWaiting.filter(w=>w.soul!==task.soul&&w.soul!==task.partner);
+  couples=couples.filter(p=>p[0]!==task.soul&&p[1]!==task.soul&&p[0]!==task.partner&&p[1]!==task.partner);
+  updateOfficeWaitingUI();
+  if(currentScene===SCENES.OFFICE)spawnOfficeWaiters();
   closeModal('task-modal');updateLobbyInfo();
   if(officeVisitorGroup){animateLeave(officeVisitorGroup,()=>{officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;});}
 };
@@ -1982,6 +2166,10 @@ window.rejectLove=function(taskId){
   task.resolved=true;
   showFeedback(`${task.soul.name} & ${task.partner.name} 配对失败`,'它们将继续各自的旅程');
   const idx=lobbyTasks.findIndex(t=>t.id===taskId);if(idx!==-1)lobbyTasks.splice(idx,1);
+  officeWaiting=officeWaiting.filter(w=>w.soul!==task.soul&&w.soul!==task.partner);
+  couples=couples.filter(p=>p[0]!==task.soul&&p[1]!==task.soul&&p[0]!==task.partner&&p[1]!==task.partner);
+  updateOfficeWaitingUI();
+  if(currentScene===SCENES.OFFICE)spawnOfficeWaiters();
   closeModal('task-modal');updateLobbyInfo();
   if(officeVisitorGroup){animateLeave(officeVisitorGroup,()=>{officeGroup.remove(officeVisitorGroup);officeVisitorGroup=null;});}
 };
@@ -2175,7 +2363,19 @@ function animate(){
       const bob=Math.sin(soulFloatPhase*2)*.02;
       const targetY=soulArrived?bob:0;
       soulGroup.position.y+=(targetY-soulGroup.position.y)*.03;
-      soulGroup.rotation.y=Math.PI+Math.sin(soulFloatPhase*.35)*.06;
+      if(soulTurn){
+        soulTurn.t+=0.016;
+        let tgt;
+        if(soulTurn.t<soulTurn.holdS)tgt=soulTurn.to;
+        else tgt=soulTurn.backTo;
+        let diff=tgt-soulGroup.rotation.y;
+        while(diff>Math.PI)diff-=Math.PI*2;
+        while(diff<-Math.PI)diff+=Math.PI*2;
+        soulGroup.rotation.y+=diff*.12;
+        if(Math.abs(diff)<.03&&soulTurn.t>=soulTurn.holdS)soulTurn=null;
+      }else{
+        soulGroup.rotation.y=Math.PI+Math.sin(soulFloatPhase*.35)*.06;
+      }
       soulGroup.position.x=Math.sin(soulFloatPhase*.35)*.06;
 
       const targetScale=1;
@@ -2284,6 +2484,7 @@ function walkCameraTo(targetPos, targetLookAt, duration=1000, onDone){
 function enterOfficeWithAnimation(){
   if(isTransitioning)return;
   // Quickly switch to office scene, then walk in
+  updateOfficeWaitingUI();
   switchScene(SCENES.OFFICE);
   playerPos.set(0,playerPos.y,9);
   yaw=0;pitch=0;
@@ -2394,6 +2595,11 @@ function handleCenterClick(){
         sitOnOfficeChair();
         return;
       }
+      if(obj.userData.type==='waiter'&&obj.userData.waitIndex!==undefined){
+        const w=officeWaiting[obj.userData.waitIndex];
+        if(w)handleOfficeTask({id:Date.now(),type:'love',soul:w.soul,partner:w.partner,desc:`${w.soul.name}和${w.partner.name}相亲成功，请求批准配对`,resolved:false});
+        return;
+      }
     }
   }
 }
@@ -2422,8 +2628,11 @@ document.getElementById('btn-leave-trial').addEventListener('click',()=>{
 document.getElementById('btn-trial').addEventListener('click',startTrial);
 document.getElementById('btn-inspect').addEventListener('click',()=>{showFeedback('👁️ 正在视察职员','点击鬼职员查看详情');});
 document.getElementById('btn-office').addEventListener('click',()=>{
-  if(lobbyTasks.length===0){showFeedback('暂无待处理事务','先完成审判工作吧');return;}
-  enterOfficeWithAnimation();if(lobbyTasks.length>0)setTimeout(()=>handleOfficeTask(lobbyTasks[0]),3000);
+  updateOfficeWaitingUI();
+  if(lobbyTasks.length===0&&officeWaiting.length===0){showFeedback('暂无待处理事务','先完成审判工作吧');return;}
+  enterOfficeWithAnimation();
+  const next=lobbyTasks[0]||(officeWaiting.length>0?{id:Date.now(),type:'love',soul:officeWaiting[0].soul,partner:officeWaiting[0].partner,desc:`${officeWaiting[0].soul.name}和${officeWaiting[0].partner.name}相亲成功，请求批准配对`,resolved:false}:null);
+  if(next){setTimeout(()=>handleOfficeTask(next),3000);}
 });
 document.getElementById('btn-end-day').addEventListener('click',endDay);
 document.getElementById('btn-office-back').addEventListener('click',()=>{
