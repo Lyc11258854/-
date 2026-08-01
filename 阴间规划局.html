@@ -1846,10 +1846,8 @@ function useMengpoSoup(soul){
 }
 
 function useDivinePower(soul){
-  const cost=15;
   if(!soul.concern||soul.concernDone)return;
-  if(PROGRESS.balance<cost){showFeedback('冥币不足','运用神力需要 15 冥币');return;}
-  PROGRESS.balance-=cost; PROGRESS.wishes+=1; soul.concernDone=true;
+  PROGRESS.wishes+=1; soul.concernDone=true;
   saveProgress(PROGRESS);
   const result=soul.concernResult||'已用神力为你完成了心愿';
   showAnswer(`"${result}"`,`🔮 神力显灵 · ${soul.name}`);
@@ -2075,11 +2073,7 @@ function showOfficeWishDialog(task){
   const soul=task.soul;
   title.textContent=`💼 遗愿面谈 · ${soul.name}`;
   let html=`<div class="section"><b>"${soul.name}"（${soul.title}）低头禀告：</b><br><span style="font-family:'STKaiti','KaiTi',serif;color:#5a7a3a;font-size:1.3vw">"大人，小的有事找您…${soul.concern}"</span></div><div class="section"><b>📖 生平</b><br>${soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${soul.personality||'暂无记录'}</div>`;
-  if(PROGRESS.balance>=15){
-    html+=`<div class="section" style="text-align:center"><button class="lobby-btn primary" id="wish-divine-btn">🔮 运用神力了却遗愿（15冥币）</button></div>`;
-  }else{
-    html+=`<div class="section" style="text-align:center;color:#c45555">冥币不足（需 15），先去大厅挣点冥币再来吧</div>`;
-  }
+  html+=`<div class="section" style="text-align:center"><button class="lobby-btn primary" id="wish-divine-btn">🔮 运用神力了却遗愿</button></div>`;
   html+=`<div class="section" style="text-align:center"><button class="lobby-btn" id="wish-back-btn">↩️ 记下此事，先回审判</button></div>`;
   content.innerHTML=html; modal.classList.add('show');
   const db=document.getElementById('wish-divine-btn');
@@ -2089,8 +2083,7 @@ function showOfficeWishDialog(task){
 
 function resolveWishInOffice(task){
   const soul=task.soul;
-  if(PROGRESS.balance<15){showFeedback('冥币不足','运用神力需要 15 冥币');return;}
-  PROGRESS.balance-=15; PROGRESS.wishes+=1; soul.concernDone=true;
+  PROGRESS.wishes+=1; soul.concernDone=true;
   saveProgress(PROGRESS);
   closeModal('task-modal');
   showAnswer(`"${soul.concernResult||'已用神力为你了却遗愿'}"`,`🔮 神力显灵 · ${soul.name}`);
