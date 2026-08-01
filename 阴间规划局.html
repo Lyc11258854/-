@@ -1853,6 +1853,7 @@ function useDivinePower(soul){
   showAnswer(`"${result}"`,`🔮 神力显灵 · ${soul.name}`);
   speak(result,soul.voicePitch,soul.voiceRate);
   changeMood('grateful'); updateUI(); renderQButtons(soul,askedQuestions); autoTimer=0;
+  showWishResult(soul);
 }
 
 function startJudging(soul){
@@ -2072,7 +2073,11 @@ function showOfficeWishDialog(task){
   const content=document.getElementById('task-content');
   const soul=task.soul;
   title.textContent=`💼 遗愿面谈 · ${soul.name}`;
-  let html=`<div class="section"><b>"${soul.name}"（${soul.title}）低头禀告：</b><br><span style="font-family:'STKaiti','KaiTi',serif;color:#5a7a3a;font-size:1.3vw">"大人，小的有事找您…${soul.concern}"</span></div><div class="section"><b>📖 生平</b><br>${soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${soul.personality||'暂无记录'}</div>`;
+  const wishEvt={id:wishSceneFor(soul),cap:`求您办件事 · ${soul.name}`,icon:'✨'};
+  const wphoto=renderEventPhoto(wishEvt);
+  let html=`<div class="section"><b>"${soul.name}"（${soul.title}）低头禀告：</b><br><span style="font-family:'STKaiti','KaiTi',serif;color:#5a7a3a;font-size:1.3vw">"大人，小的有事找您…${soul.concern}"</span></div>`;
+  if(wphoto)html+=`<img class="help-photo" src="${wphoto}" alt="遗愿画面" style="max-height:26vh"><div class="help-photo-cap">📸 他/她惦记的事</div>`;
+  html+=`<div class="section"><b>📖 生平</b><br>${soul.bio||'暂无记录'}</div><div class="section"><b>🎭 性格</b><br>${soul.personality||'暂无记录'}</div>`;
   html+=`<div class="section" style="text-align:center"><button class="lobby-btn primary" id="wish-divine-btn">🔮 运用神力了却遗愿</button></div>`;
   html+=`<div class="section" style="text-align:center"><button class="lobby-btn" id="wish-back-btn">↩️ 记下此事，先回审判</button></div>`;
   content.innerHTML=html; modal.classList.add('show');
@@ -2081,15 +2086,50 @@ function showOfficeWishDialog(task){
   document.getElementById('wish-back-btn').addEventListener('click',()=>backFromWishOffice());
 }
 
+function wishSceneFor(soul){
+  const c=soul.concern||'';
+  if(c.includes('猫'))return 'pet';
+  if(c.includes('钱')||c.includes('学费')||c.includes('欠')||c.includes('工资')||c.includes('积蓄')||c.includes('车贷')||c.includes('棺材本'))return 'debt';
+  if(c.includes('老伴')||c.includes('老婆')||c.includes('老公'))return c.includes('修')?'watch':'photo';
+  if(c.includes('妈')||c.includes('爸')||c.includes('女儿')||c.includes('儿子')||c.includes('孙女')||c.includes('孙子')||c.includes('重孙')||c.includes('孩子')||c.includes('家人')||c.includes('兄弟')||c.includes('闺蜜'))return 'photo';
+  if(c.includes('阳台')||c.includes('浇')||c.includes('月季')||c.includes('花'))return 'water';
+  if(c.includes('修')||c.includes('手表')||c.includes('表'))return 'watch';
+  if(c.includes('唱')||c.includes('歌')||c.includes('古琴')||c.includes('吉他'))return 'song';
+  if(c.includes('伞'))return 'umbrella';
+  if(c.includes('腊肉')||c.includes('早餐')||c.includes('厨')||c.includes('吃'))return 'cook';
+  if(c.includes('灯'))return 'light';
+  if(c.includes('种')||c.includes('桂花')||c.includes('树'))return 'seed';
+  if(c.includes('茶'))return 'tea';
+  if(c.includes('书')||c.includes('诗集')||c.includes('出版')||c.includes('棋'))return 'book';
+  if(c.includes('学生')||c.includes('案子')||c.includes('病')||c.includes('项目')||c.includes('团队')||c.includes('工作')||c.includes('老板')||c.includes('井盖')||c.includes('车'))return 'job';
+  if(c.includes('粉丝')||c.includes('网')||c.includes('视频')||c.includes('朋友圈')||c.includes('群'))return 'letter';
+  return 'wish';
+}
+
+function showWishResult(soul,onClose){
+  const modal=document.getElementById('help-result-modal');
+  const title=document.getElementById('help-result-title');
+  const content=document.getElementById('help-result-content');
+  title.textContent=`📸 遗愿已了 · ${soul.name}`;
+  const wishEvt={id:wishSceneFor(soul),cap:'心愿已了',icon:'✨'};
+  const eventPhoto=renderEventPhoto(wishEvt);
+  let photoHtml='';
+  if(eventPhoto)photoHtml=`<img class="help-photo" src="${eventPhoto}" alt="事情结果"><div class="help-photo-cap">📸 事情的结果</div>`;
+  content.innerHTML=`${photoHtml}<div class="section"><b>${soul.name}的遗愿结果：</b><br>${soul.concernResult||'已用神力为你了却遗愿'}</div><div class="section" style="text-align:center"><button class="lobby-btn primary" id="wish-result-ok">✅ 知道了</button></div>`;
+  modal.classList.add('show');
+  document.getElementById('wish-result-ok').addEventListener('click',()=>{
+    closeModal('help-result-modal');
+    if(onClose)onClose();
+  });
+}
+
 function resolveWishInOffice(task){
   const soul=task.soul;
   PROGRESS.wishes+=1; soul.concernDone=true;
   saveProgress(PROGRESS);
   closeModal('task-modal');
-  showAnswer(`"${soul.concernResult||'已用神力为你了却遗愿'}"`,`🔮 神力显灵 · ${soul.name}`);
-  speak(soul.concernResult||'已用神力为你了却遗愿',soul.voicePitch,soul.voiceRate);
   changeMood('grateful'); updateUI();
-  setTimeout(()=>backFromWishOffice(),1800);
+  showWishResult(soul,()=>backFromWishOffice());
 }
 
 function backFromWishOffice(){
