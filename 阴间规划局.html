@@ -1674,15 +1674,6 @@ function soulEnter(soul){
   if(soul.enemy)prefix='😈 哟，你也落我手里了？';
   if(soul.meangirl){const other=soul.name==='小蝶'?'小美':'小蝶';prefix=`💅 姐妹驾到！${other}来没来？`;}
   const line=getLine(soul,'enter');
-  if(soul.concern&&!soul.concernDone){
-    showAnswer(`"大人，小的有事找您，办公室谈好么…"`,`${prefix} ${soul.name} · ${soul.title}`);
-    speak('大人，小的有事找您，办公室谈好么。',soul.voicePitch,soul.voiceRate);
-    askedQuestions=[];
-    renderOfficeWishEntry(soul);
-    changeMood('nervous');
-    spawnAudience();
-    return;
-  }
   showAnswer(`"${line}"`,`${prefix} ${soul.name} · ${soul.title}`);
   speak(line,soul.voicePitch,soul.voiceRate);
   askedQuestions=[];
@@ -1858,6 +1849,23 @@ function useDivinePower(soul){
 
 function startJudging(soul){
   if(judgingMode)return;
+  // 审判完成时，若遗愿未了，鬼先开口请求办公室面谈
+  if(soul.concern&&!soul.concernDone){
+    showAnswer(`"大人，请留步！小的还有一事相求…"`,`${soul.name} · 临别之际`);
+    speak('大人，小的还有一事相求，办公室谈好么。',soul.voicePitch,soul.voiceRate);
+    const cont=document.getElementById('question-list');
+    cont.innerHTML=`<button class="q-btn" id="wish-go-office" style="border-color:#7a9c6a!important;color:#5a7a3a!important">💼 好，办公室谈</button><button class="q-btn" id="wish-no-office" style="border-color:#999!important;color:#999!important">⚖️ 不用了，直接送走</button>`;
+    document.getElementById('wish-go-office').addEventListener('click',()=>goOfficeForWish(soul));
+    document.getElementById('wish-no-office').addEventListener('click',()=>{
+      cont.innerHTML='';
+      proceedJudging(soul);
+    });
+    return;
+  }
+  proceedJudging(soul);
+}
+
+function proceedJudging(soul){
   judgingMode=true;
   showAnswer(`"${getLine(soul,'last')}"`,`${soul.name}的最后遗言`);
   const cont=document.getElementById('question-list');
