@@ -571,6 +571,13 @@ function updateCameraRotation() {
     }
     return;
   }
+  if(isSitting&&currentScene===SCENES.OFFICE){
+    camera.position.set(playerPos.x, playerPos.y+1.5, playerPos.z);
+    const euler = new THREE.Euler(pitch, yaw, 0, 'YXZ');
+    camera.quaternion.setFromEuler(euler);
+    if(playerModel)playerModel.visible=false;
+    return;
+  }
   const dist=3.6;
   const cp=Math.cos(pitch), sp=Math.sin(pitch);
   const back=new THREE.Vector3(Math.sin(yaw),0,Math.cos(yaw)).normalize();
@@ -581,6 +588,7 @@ function updateCameraRotation() {
   );
   camera.position.lerp(camPos,.25);
   camera.lookAt(new THREE.Vector3(playerPos.x, playerPos.y+1.1, playerPos.z));
+  if(playerModel)playerModel.visible=true;
 }
 
 function updateMovement() {
@@ -2550,12 +2558,14 @@ function enterOfficeWithAnimation(){
 function sitOnOfficeChair(){
   if(isTransitioning||isSitting)return;
   isSitting=true;
-  const targetYaw=0,pitchTarget=-0.15;
   walkCameraTo(
-    {x:0,y:0,z:1.6},
+    {x:0,y:0,z:1},
     {x:0,y:0.75,z:-2},
     800,
-    ()=>{showFeedback('已坐下，按 Q 起身','可在此处理事务');}
+    ()=>{
+      updateCameraRotation();
+      showFeedback('第一人称视角 · 按 Q 起身','点击桌面处理事务');
+    }
   );
 }
 
@@ -2566,7 +2576,10 @@ function standUpFromChair(){
     {x:0,y:0,z:2.5},
     {x:0,y:0.7,z:-2},
     600,
-    ()=>{}
+    ()=>{
+      if(playerModel)playerModel.visible=true;
+      updateCameraRotation();
+    }
   );
 }
 
