@@ -365,6 +365,12 @@ class CSS2DRenderer {
   <div class="sub" id="fb-sub"></div>
 </div>
 
+<div class="modal" id="doc-modal">
+  <button class="close-btn" onclick="closeModal('doc-modal')">✕</button>
+  <h3 id="doc-title">📄 地府工作管理事项</h3>
+  <div class="content" id="doc-content"></div>
+</div>
+
 <div class="modal" id="bio-modal">
   <button class="close-btn" onclick="closeModal('bio-modal')">✕</button>
   <h3 id="bio-title">生平档案</h3>
@@ -1129,17 +1135,17 @@ function buildOffice() {
   // 桌上的文件堆
   for(let i=0;i<4;i++){
     const f=new THREE.Mesh(new THREE.BoxGeometry(.45,.03,.6), new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(.08,i*.1,.92)}));
-    f.position.set(-1.2+i*.06, .62+i*.035, -2.2); f.rotation.z=(Math.random()-.5)*.06; officeGroup.add(f);
+    f.position.set(-1.2+i*.06, .62+i*.035, -2.2); f.rotation.z=(Math.random()-.5)*.06; f.userData={type:'document'}; officeGroup.add(f);
   }
   // 一份摊开的文件
   const openDoc=new THREE.Mesh(new THREE.BoxGeometry(.5,.02,.7), new THREE.MeshStandardMaterial({color:0xffffff}));
-  openDoc.position.set(-.4,.62,-2.3); openDoc.rotation.y=.15; officeGroup.add(openDoc);
+  openDoc.position.set(-.4,.62,-2.3); openDoc.rotation.y=.15; openDoc.userData={type:'document'}; officeGroup.add(openDoc);
 
   // 茶杯
   const cup=new THREE.Mesh(new THREE.CylinderGeometry(.09,.07,.12,10), new THREE.MeshStandardMaterial({color:0xffffff,roughness:.4}));
-  cup.position.set(.7,.66,-2.4); officeGroup.add(cup);
+  cup.position.set(.7,.66,-2.4); cup.userData={type:'cup'}; officeGroup.add(cup);
   const cupHandle=new THREE.Mesh(new THREE.TorusGeometry(.05,.012,6,8,Math.PI), new THREE.MeshStandardMaterial({color:0xffffff}));
-  cupHandle.position.set(.62,.69,-2.4); cupHandle.rotation.y=Math.PI/2; officeGroup.add(cupHandle);
+  cupHandle.position.set(.62,.69,-2.4); cupHandle.rotation.y=Math.PI/2; cupHandle.userData={type:'cup'}; officeGroup.add(cupHandle);
   (()=>{const __m=new THREE.Mesh(new THREE.CylinderGeometry(.06,.05,.02,10), new THREE.MeshStandardMaterial({color:0x8a5a2a}));__m.position.set(.7,.73,-2.4);officeGroup.add(__m);return __m;})();
 
   // 墙上挂钟
@@ -2776,6 +2782,14 @@ function handleCenterClick(){
         else switchScene(SCENES.LOBBY);
         return;
       }
+      if(obj.userData.type==='document'){
+        showOfficeDoc();
+        return;
+      }
+      if(obj.userData.type==='cup'){
+        drinkTea();
+        return;
+      }
       if(obj.userData.type==='chair'&&!isSitting){
         sitOnOfficeChair();
         return;
@@ -2786,6 +2800,48 @@ function handleCenterClick(){
         return;
       }
     }
+  }
+}
+
+// ===== 办公室互动 =====
+function showOfficeDoc(){
+  const modal=document.getElementById('doc-modal');
+  document.getElementById('doc-title').textContent='📄 地府工作管理事项 · 第一册';
+  document.getElementById('doc-content').innerHTML=`
+    <div class="section" style="text-align:center;color:#8a6a3a"><i>第 壹 卷 · 阎罗殿下批阅</i></div>
+    <div class="section"><b>一、生死簿核销规范</b><br>每旬末对照勾魂使呈报的亡魂名册，逐一核销登记。凡功德圆满者记入<b>「转世」</b>，罪孽深重者暂押<b>「轮回」</b>，案情存疑者移交<b>「复查」</b>。名录经三位判官会签后方可归档。</div>
+    <div class="section"><b>二、冥币收支纪律</b><br>判官支取冥币须凭条申领，经主簿盖印。禁止以权谋私为亡魂改判、调换门庭。违者罚俸三月，重者打入油锅。<b>严禁挪用公帑为鬼差购置「法器」以外之物。</b></div>
+    <div class="section"><b>三、功过评估准则</b><br>判罚当以阳间一生为据，重德行、轻口舌。行善积德者酌情宽宥，怙恶不悛者从重议罪。冤屈未雪之魂，须查明真相，不可草率定论。</div>
+    <div class="section"><b>四、六道轮回流程</b><br>天、人、阿修罗、畜生、饿鬼、地狱六道，依功过簿定夺。转世者先过孟婆桥饮忘忧汤，再入轮回池；重刑者先历地狱，期满方得超生。</div>
+    <div class="section"><b>五、值班巡查规定</b><br>办公期间须着官袍、佩令牌。判官审理案件时应悬挂「肃静」牌，闲杂人等不得擅入。下班前检查各殿灯火，慎防火烛。</div>
+    <div class="section" style="text-align:center;color:#8a6a3a"><i>—— 阴间规划局 · 存档室 ——</i></div>`;
+  modal.classList.add('show');
+}
+
+function drinkTea(){
+  showFeedback('☕ 端起茶杯','吹了吹热气，喝了一口');
+  const cupMeshes=[];
+  officeGroup.children.forEach(g=>{if(g.userData&&g.userData.type==='cup')cupMeshes.push(g);});
+  if(cupMeshes.length>0){
+    const targets=cupMeshes.map(c=>({mesh:c,origPos:c.position.clone(),origRot:{x:c.rotation.x,y:c.rotation.y,z:c.rotation.z}}));
+    const startTime=performance.now();
+    function lift(t){
+      const elapsed=t-startTime;
+      if(elapsed>1600){
+        targets.forEach(tt=>{tt.mesh.position.copy(tt.origPos);tt.mesh.rotation.x=tt.origRot.x;tt.mesh.rotation.y=tt.origRot.y;tt.mesh.rotation.z=tt.origRot.z;});
+        return;
+      }
+      const p=Math.min(1,elapsed/1600);
+      const liftAmt=p<.45?Math.sin(p/.45*Math.PI/2):Math.sin((1-(p-.45)/.55)*Math.PI/2);
+      targets.forEach(tt=>{
+        tt.mesh.position.x=tt.origPos.x;
+        tt.mesh.position.y=tt.origPos.y+.3*liftAmt;
+        tt.mesh.position.z=tt.origPos.z+.15*liftAmt;
+        tt.mesh.rotation.z=Math.sin(p*Math.PI)*.6;
+      });
+      requestAnimationFrame(lift);
+    }
+    requestAnimationFrame(lift);
   }
 }
 
