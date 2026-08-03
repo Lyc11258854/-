@@ -125,6 +125,10 @@ body{overflow:hidden;background:#f5f0eb;font-family:'STKaiti','KaiTi','STSong','
 #feedback .main.happy{color:#d4a017;text-shadow:0 0 20px rgba(212,160,23,.3)}
 #feedback .main.sad{color:#c45555;text-shadow:0 0 20px rgba(196,85,85,.2)}
 
+#music-toggle{position:fixed;bottom:1.2vh;right:1.2vw;z-index:60;padding:.6vh 1vw;font-size:1.1vw;font-family:inherit;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.15);color:#555;border-radius:4px;cursor:pointer;transition:all .3s;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+#music-toggle:hover{background:#f5f0eb;border-color:#c45555;color:#333}
+#music-toggle.off{background:rgba(240,240,240,.9);color:#999}
+
 /* ===== Modal ===== */
 #doc-veil{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.25);z-index:49;opacity:0;pointer-events:none;transition:opacity .3s}
 #doc-veil.show{opacity:1;pointer-events:auto;cursor:pointer}
@@ -366,6 +370,8 @@ class CSS2DRenderer {
   <div class="main" id="fb-main"></div>
   <div class="sub" id="fb-sub"></div>
 </div>
+
+<button id="music-toggle" title="背景音乐开关">🎵 音乐：开</button>
 
 <div id="doc-veil"></div>
 <div class="modal" id="doc-modal">
@@ -1588,6 +1594,7 @@ function switchScene(newScene){
     clearOfficeWaiters();
   }
   currentScene=newScene;
+  switchMusic(newScene);
   lobbyGroup.visible=newScene===SCENES.LOBBY;
   trialGroup.visible=newScene===SCENES.TRIAL;
   officeGroup.visible=newScene===SCENES.OFFICE;
@@ -3392,6 +3399,138 @@ window.rejectOfficeHelp=function(){
   showFeedback('婉拒了求助','它失落地离开了');
   setTimeout(()=>{if(officeVisitor&&officeVisitor.type!=='love')showOfficeDialog(officeVisitor);},1000);
 };
+
+// ===== 恐怖搞笑背景音乐系统 =====
+let musicCtx=null, musicEnabled=true, musicTimer=null, musicStep=0, musicScene='lobby';
+function ensureMusicCtx(){
+  if(musicCtx)return musicCtx;
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return null;
+  musicCtx=new AC();
+  return musicCtx;
+}
+function musicGain(){
+  if(!musicCtx)return null;
+  if(!musicCtx._mg){musicCtx._mg=musicCtx.createGain();musicCtx._mg.gain.value=0.16;musicCtx._mg.connect(musicCtx.destination);}
+  return musicCtx._mg;
+}
+function mNote(freq,t,dur,type,gainVol,slideTo){
+  if(!musicCtx)return;
+  const t0=musicCtx.currentTime+t;
+  const o=musicCtx.createOscillator();
+  const g=musicCtx.createGain();
+  o.type=type||'triangle';
+  o.frequency.setValueAtTime(freq,t0);
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(Math.max(slideTo,1),t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(gainVol||0.3,t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g);g.connect(musicGain());
+  o.start(t0);o.stop(t0+dur+0.05);
+}
+function mNoise(t,dur,gainVol,freq){
+  if(!musicCtx)return;
+  const t0=musicCtx.currentTime+t;
+  const len=Math.floor((musicCtx.sampleRate||44100)*dur);
+  const buf=musicCtx.createBuffer(1,len,musicCtx.sampleRate||44100);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+  const src=musicCtx.createBufferSource();src.buffer=buf;
+  const f=musicCtx.createBiquadFilter();f.type='lowpass';f.frequency.value=freq||800;
+  const g=musicCtx.createGain();
+  g.gain.setValueAtTime(gainVol||0.25,t0);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  src.connect(f);f.connect(g);g.connect(musicGain());
+  src.start(t0);src.stop(t0+dur+0.05);
+}
+// 恐怖搞笑音阶（小调 + 不和谐音程）
+const HORROR_FUN_SCALE=[440,466.16,523.25,554.37,659.25,698.46,783.99];
+function mPlayScene(scene){
+  musicScene=scene;
+  musicStep=0;
+}
+function musicTick(){
+  if(!musicEnabled||!musicCtx||!musicGain())return;
+  const s=musicStep;
+  if(musicScene==='lobby'){
+    // 🏚️ 鬼宅马戏团：3/4 欢快滑稽圆舞曲
+    const seq=[0,2,4,2,  3,1,0,1,  4,5,4,2,  6,5,4,2];
+    const note=seq[s%16];
+    const f=HORROR_FUN_SCALE[note]/2;
+    mNote(f,0,.18,'square',.12);
+    mNote(f*2,0,.18,'triangle',.1);
+    if(s%4===0)mNote(HORROR_FUN_SCALE[note]*0.75,0,.4,'sine',.12);       // 滑稽低音步进
+    if(s%8===4)mNote(HORROR_FUN_SCALE[(note+5)%7]*1.5,0,.3,'sawtooth',.06); // 偶尔鬼魂滑音
+    if(s%16===8)mNoise(0,.12,.08,300);                                    // 幽灵"噗"声
+    if(s%32===0){mNote(220,0,.9,'sine',.1);mNote(330,0,.9,'sine',.06);}   // 幽灵钟声
+  }else if(musicScene==='trial'){
+    // ⚖️ 判官升堂曲：4/4 威严+荒诞
+    if(s%4===0){mNoise(0,.14,.2,400);mNoise(0,.05,.25,1200);}            // 惊堂木"啪"
+    if(s%2===0)mNote(98,0,.3,'triangle',.2);                              // 庄严低音
+    if(s%4===2)mNote(82.4,0,.5,'sine',.16);                               // 恐怖低频持续
+    const seq2=[0,6,4,6,  1,5,3,5,  0,4,6,4,  2,6,5,4];
+    const n2=seq2[s%16];
+    if(s%2===1)mNote(HORROR_FUN_SCALE[n2]*1.5,0,.22,'sawtooth',.07, HORROR_FUN_SCALE[(n2+1)%7]*1.5); // 紧促诡异旋律+滑音
+    if(s%16===7)mNote(277.18,0,.5,'sine',.12);                            // 荒诞低鸣
+  }else if(musicScene==='office'){
+    // 📄 阴间办公室：慵懒诡异爵士布鲁斯
+    if(s%2===0)mNote(110,0,.5,'triangle',.14);                            // 慵懒低音
+    if(s%2===1)mNote(146.83,0,.5,'triangle',.12);
+    const seq3=[0,3,2,4,  5,4,3,1,  0,4,5,3,  2,6,5,4];
+    const n3=seq3[s%16];
+    if(s%2===1)mNote(HORROR_FUN_SCALE[n3]*1,0,.4,'triangle',.1, HORROR_FUN_SCALE[(n3+6)%7]); // 走调慵懒旋律
+    if(s%4===3)mNote(311.13,0,.3,'sine',.08, 466.16);                      // 打字机般"滴滴"
+    if(s%16===0)mNoise(0,.08,.06,1500);                                    // 键盘敲击
+    if(s%32===16)mNote(261.63,0,.8,'sine',.1, 349.23);                     // 阴森长音
+  }
+  musicStep++;
+}
+function startMusic(){
+  if(musicTimer)return;
+  musicStep=0;
+  musicTick();
+  musicTimer=setInterval(musicTick,180);
+}
+function stopMusic(){
+  if(musicTimer){clearInterval(musicTimer);musicTimer=null;}
+  musicStep=0;
+}
+function switchMusic(scene){
+  musicScene=scene;musicStep=0;
+}
+function toggleMusic(){
+  musicEnabled=!musicEnabled;
+  const btn=document.getElementById('music-toggle');
+  if(btn){btn.textContent=musicEnabled?'🎵 音乐：开':'🔇 音乐：关';btn.classList.toggle('off',!musicEnabled);}
+  if(musicEnabled){
+    ensureMusicCtx();
+    if(musicCtx&&musicCtx.state==='suspended')musicCtx.resume();
+    startMusic();
+  }else{
+    stopMusic();
+  }
+}
+document.getElementById('music-toggle').addEventListener('click',()=>{
+  ensureMusicCtx();
+  if(musicCtx&&musicCtx.state==='suspended')musicCtx.resume();
+  toggleMusic();
+  if(musicEnabled&&!musicTimer)startMusic();
+});
+// 首次用户交互时初始化音乐（浏览器自动播放限制）
+window.addEventListener('pointerdown',()=>{
+  if(musicEnabled&&!musicTimer){
+    ensureMusicCtx();
+    if(musicCtx&&musicCtx.state==='suspended')musicCtx.resume();
+    startMusic();
+  }
+},{once:true});
+window.addEventListener('keydown',()=>{
+  if(musicEnabled&&!musicTimer){
+    ensureMusicCtx();
+    if(musicCtx&&musicCtx.state==='suspended')musicCtx.resume();
+    startMusic();
+  }
+},{once:true});
 
 // ===== Init =====
 buildLobby();buildTrialRoom();buildOffice();
