@@ -2313,8 +2313,12 @@ function backFromWishOffice(){
   if(soulGroup&&currentSoul){
     soulArrived=true;
     showTrialUI();
-    renderQButtons(currentSoul,askedQuestions);
-    showAnswer(`"${getLine(currentSoul,'enter')}"`,currentSoul.name);
+    if(wishDone){
+      startJudging(currentSoul);
+    }else{
+      renderQButtons(currentSoul,askedQuestions);
+      showAnswer(`"${getLine(currentSoul,'enter')}"`,currentSoul.name);
+    }
   }else if(currentSoul){
     spawnSoul(currentSoul);
     showTrialUI();
