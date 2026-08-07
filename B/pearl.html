@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海底珍珠捞捞乐</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #001030; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
+#backBtn { position: fixed; top: 16px; left: 16px; z-index: 999; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; background: rgba(0,0,0,0.4); color: #8ab; font-size: 13px; cursor: pointer; text-decoration: none; backdrop-filter: blur(4px); transition: 0.2s; }
+#backBtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+canvas { display: block; border-radius: 16px; box-shadow: 0 0 60px rgba(0,100,200,0.3); }
+#ui { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 10; }
+#coinDisplay { position: absolute; top: 18px; right: 24px; color: #fd0; font-size: 20px; font-family: 'Courier New', monospace; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+#livesDisplay { position: absolute; top: 18px; left: 24px; color: #f88; font-size: 18px; font-family: 'Courier New', monospace; text-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+#comboDisplay { position: absolute; top: 48px; left: 24px; color: #ff0; font-size: 13px; font-family: 'Courier New', monospace; text-shadow: 0 2px 8px rgba(0,0,0,0.5); opacity: 0; transition: 0.3s; }
+#shellWarn { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #f44; font-size: 36px; font-weight: bold; text-shadow: 0 0 30px rgba(255,0,0,0.5); opacity: 0; pointer-events: none; transition: 0.2s; z-index: 5; }
+
+#menu { position: absolute; top:0;left:0;right:0;bottom:0; background: rgba(0,10,30,0.93); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+#menu h1 { font-size: 42px; margin-bottom: 4px; background: linear-gradient(135deg,#0af,#0fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+#menu .sub { color: #8ab; font-size: 14px; margin-bottom: 4px; }
+#menu .coins { font-size: 22px; color: #fd0; margin-bottom: 16px; }
+#menu .bucketInfo { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+.bucketCard { background: #0a1a30; border: 2px solid #1a3a5a; border-radius: 12px; padding: 12px 16px; text-align: center; cursor: pointer; transition: 0.2s; pointer-events: all; width: 100px; }
+.bucketCard:hover { border-color: #0af; }
+.bucketCard.owned { border-color: #264; }
+.bucketCard.equipped { border-color: #0fa; box-shadow: 0 0 12px rgba(0,255,170,0.3); }
+.bucketCard .preview { font-size: 32px; margin-bottom: 4px; }
+.bucketCard .name { font-size: 12px; color: #cde; }
+.bucketCard .stat { font-size: 10px; color: #8ab; }
+.bucketCard .price { font-size: 11px; color: #fd0; margin-top: 2px; }
+.bucketCard .status { font-size: 10px; margin-top: 2px; }
+.bucketCard .status.owned { color: #4f4; }
+.bucketCard .status.equipped { color: #0fa; font-weight: bold; }
+#startBtn { padding: 14px 56px; border: none; border-radius: 14px; background: linear-gradient(135deg,#0af,#08f); color: #fff; font-size: 20px; font-weight: bold; cursor: pointer; pointer-events: all; transition: 0.2s; margin-top: 4px; }
+#startBtn:hover { transform: scale(1.05); }
+
+#gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; text-align: center; display: none; z-index: 20; }
+#gameOver h1 { font-size: 46px; margin-bottom: 6px; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+#gameOver p { font-size: 20px; margin-bottom: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+#gameOver .earned { font-size: 26px; color: #fd0; margin: 8px 0 16px; }
+#gameOver .btns { display: flex; gap: 12px; justify-content: center; }
+#gameOver button { padding: 12px 36px; border: none; border-radius: 14px; color: #fff; font-size: 18px; cursor: pointer; pointer-events: all; transition: 0.2s; }
+#gameOver button:hover { transform: scale(1.05); }
+#gameOver .btnRestart { background: linear-gradient(135deg,#0af,#08f); }
+#gameOver .btnMenu { background: linear-gradient(135deg,#48f,#44f); }
+#restartHint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.2); font-size: 13px; z-index: 10; pointer-events: none; }
+
+#confirmModal { position: absolute; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; }
+#confirmBox { background: #0a1a30; border: 2px solid #fd0; border-radius: 16px; padding: 28px 36px; text-align: center; max-width: 340px; }
+#confirmBox .msg { font-size: 18px; margin-bottom: 16px; color: #fff; }
+#confirmBox .btns { display: flex; gap: 14px; justify-content: center; }
+#confirmBox button { padding: 8px 28px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; pointer-events: all; }
+#confirmBox .btnYes { background: #fd0; color: #000; }
+#confirmBox .btnNo { background: #555; color: #fff; }
+</style>
+</head>
+<body>
+<a id="backBtn" href="index.html">← 大厅</a>
+<div id="ui">
+  <div id="livesDisplay">❤️❤️❤️</div>
+  <div id="comboDisplay">🔥 连击 x0</div>
+  <div id="coinDisplay">🪙 0</div>
+</div>
+<div id="shellWarn">⚠️</div>
+
+<div id="menu">
+  <h1>🌊 珍珠捞捞乐</h1>
+  <div class="sub">接珍珠赚金币，升级你的篮子！</div>
+  <div class="coins" id="menuCoins">🪙 0</div>
+  <div class="bucketInfo" id="bucketGrid"></div>
+  <button id="startBtn">开始捕捞</button>
+</div>
+
+<div id="confirmModal">
+  <div id="confirmBox">
+    <div class="msg" id="confirmMsg">是否升级？</div>
+    <div class="btns">
+      <button class="btnYes" id="confirmYes">确认</button>
+      <button class="btnNo" id="confirmNo">取消</button>
+    </div>
+  </div>
+</div>
+
+<div id="gameOver">
+  <h1>🌊 打捞结束</h1>
+  <p>珍珠: <span id="finalPearls">0</span></p>
+  <p>最高连击: <span id="finalCombo">0</span></p>
+  <div class="earned">+<span id="earnedCoins">0</span> 🪙</div>
+  <div class="btns">
+    <button class="btnRestart" onclick="startGame()">再来一局</button>
+    <button class="btnMenu" onclick="showMenu()">返回商店</button>
+  </div>
+</div>
+
+<div id="restartHint">← → 移动篮子 | R 重启</div>
+<canvas id="game"></canvas>
+
+<script>
+// ============ BUCKET UPGRADES ============
+const BUCKET_LEVELS = [
+  { id:'tiny',  name:'竹编小篮',  w:100, price:0    },
+  { id:'small', name:'藤编中篮',  w:120, price:50   },
+  { id:'mid',   name:'木制大篮',  w:140, price:120  },
+  { id:'big',   name:'铁箍巨篮',  w:165, price:250  },
+  { id:'huge',  name:'金边神篮',  w:190, price:500  },
+];
+
+// ============ SAVE ============
+function loadSave() {
+  try { return JSON.parse(localStorage.getItem('pearlSave')) || { coins:0, owned:['tiny'], equipped:'tiny' }; }
+  catch { return { coins:0, owned:['tiny'], equipped:'tiny' }; }
+}
+function saveSave(s) { localStorage.setItem('pearlSave', JSON.stringify(s)); }
+let save = loadSave();
+
+// ============ DOM ============
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = 700;
+const H = canvas.height = 620;
+
+const coinDisplay = document.getElementById('coinDisplay');
+const livesDisplay = document.getElementById('livesDisplay');
+const comboDisplay = document.getElementById('comboDisplay');
+const shellWarn = document.getElementById('shellWarn');
+const menuEl = document.getElementById('menu');
+const menuCoins = document.getElementById('menuCoins');
+const bucketGrid = document.getElementById('bucketGrid');
+const gameOverEl = document.getElementById('gameOver');
+const finalPearls = document.getElementById('finalPearls');
+const finalCombo = document.getElementById('finalCombo');
+const earnedCoins = document.getElementById('earnedCoins');
+const confirmModal = document.getElementById('confirmModal');
+const confirmMsg = document.getElementById('confirmMsg');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo = document.getElementById('confirmNo');
+
+let score = 0, lives = 3, combo = 0, maxCombo = 0, earnedThisRun = 0;
+let gameRunning = false, frame = 0, gameTime = 0, difficulty = 1;
+let pendingUpgrade = null;
+
+const bucket = { x: W/2, y: H - 50, w: 100, h: 36, speed: 5 };
+let pearls = [], shells = [], bubbles = [], particles = [];
+let fish = [], seaweeds = [], stars = [];
+
+for (let i=0; i<50; i++) stars.push({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.5, a:Math.random()*0.6+0.2 });
+for (let i=0; i<7; i++) seaweeds.push({ x:40+Math.random()*(W-80), h:50+Math.random()*80, phase:Math.random()*Math.PI*2, color:`hsl(${120+Math.random()*40},50%,${30+Math.random()*20}%)` });
+for (let i=0; i<4; i++) fish.push({ x:Math.random()*W, y:80+Math.random()*(H-250), w:25+Math.random()*20, speed:0.4+Math.random()*0.8, dir:Math.random()>0.5?1:-1, color:`hsl(${Math.random()*60+180},60%,50%)` });
+
+function getBucketLevel() { return BUCKET_LEVELS.find(b => b.id === save.equipped) || BUCKET_LEVELS[0]; }
+function applyBucket() { const b = getBucketLevel(); bucket.w = b.w; }
+
+const keys = {};
+document.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if ((e.key==='r'||e.key==='R') && !gameRunning) startGame();
+  if (e.key==='ArrowLeft'||e.key==='ArrowRight') e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// ============ MENU ============
+function renderMenu() {
+  menuCoins.textContent = `🪙 ${save.coins}`;
+  bucketGrid.innerHTML = '';
+  for (const b of BUCKET_LEVELS) {
+    const owned = save.owned.includes(b.id);
+    const equipped = save.equipped === b.id;
+    const emojis = ['🧺','🧺','🪣','🪣','🏆'];
+    const div = document.createElement('div');
+    div.className = `bucketCard${owned?' owned':''}${equipped?' equipped':''}`;
+    div.innerHTML = `
+      <div class="preview">${emojis[BUCKET_LEVELS.indexOf(b)]}</div>
+      <div class="name">${b.name}</div>
+      <div class="stat">宽度 ${b.w}px</div>
+      <div class="price">${b.price===0?'免费':`🪙 ${b.price}`}</div>
+      <div class="status ${owned?'owned':''}">${equipped?'已装备':owned?'已拥有':'未拥有'}</div>
+    `;
+    div.onclick = () => {
+      if (equipped) return;
+      if (owned) {
+        save.equipped = b.id; saveSave(save); renderMenu();
+      } else if (save.coins >= b.price) {
+        pendingUpgrade = b;
+        confirmMsg.textContent = `是否用 ${b.price} 🪙 升级为「${b.name}」？`;
+        confirmModal.style.display = 'flex';
+      }
+    };
+    bucketGrid.appendChild(div);
+  }
+}
+
+confirmYes.onclick = () => {
+  if (!pendingUpgrade) return;
+  const b = pendingUpgrade;
+  save.coins -= b.price; save.owned.push(b.id); save.equipped = b.id;
+  saveSave(save); pendingUpgrade = null;
+  confirmModal.style.display = 'none'; renderMenu();
+};
+confirmNo.onclick = () => { pendingUpgrade = null; confirmModal.style.display = 'none'; };
+
+function showMenu() {
+  gameRunning = false; gameOverEl.style.display = 'none'; menuEl.style.display = 'flex';
+  renderMenu(); coinDisplay.textContent = `🪙 ${save.coins}`;
+}
+document.getElementById('startBtn').onclick = () => {
+  menuEl.style.display = 'none'; startGame();
+};
+
+// ============ GAME ============
+function spawnPearl() {
+  const r = 7 + Math.random()*9;
+  pearls.push({ x:20+Math.random()*(W-40), y:-r, r, speed:1+Math.random()*1.5+difficulty*0.15, glow:0.5+Math.random()*0.5, phase:Math.random()*Math.PI*2 });
+}
+
+function spawnShell() {
+  const r = 9 + Math.random()*7;
+  shells.push({ x:20+Math.random()*(W-40), y:-r, r, speed:0.7+Math.random()*0.8+difficulty*0.1, rot:Math.random()*Math.PI*2, rotSpeed:(Math.random()-0.5)*0.03, type:Math.floor(Math.random()*3) });
+}
+
+function spawnBubble() {
+  bubbles.push({ x:Math.random()*W, y:H+10, r:2+Math.random()*5, speed:0.3+Math.random()*0.5, wobble:Math.random()*Math.PI*2 });
+}
+
+function spawnParticles(x,y,color,count=10) {
+  for (let i=0;i<count;i++) {
+    const a=Math.random()*Math.PI*2, spd=Math.random()*3+1;
+    particles.push({ x,y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd, life:1, decay:0.02+Math.random()*0.03, r:1.5+Math.random()*2, color });
+  }
+}
+
+// ============ DRAW ============
+function drawBackground() {
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#001840'); g.addColorStop(0.3,'#002860'); g.addColorStop(0.6,'#003060'); g.addColorStop(1,'#001020');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=0.035;
+  for (let i=0;i<5;i++) {
+    const x=100+i*140+Math.sin(frame*0.005+i)*30;
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(x-12,0); ctx.lineTo(x+12,0); ctx.lineTo(x+50+Math.sin(i)*20,H); ctx.lineTo(x-50+Math.sin(i)*20,H); ctx.closePath(); ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  ctx.fillStyle='#3a2a1a'; ctx.fillRect(0,H-18,W,18);
+  ctx.fillStyle='#4a3a2a';
+  for (let i=0;i<W;i+=10) { const h=2+Math.sin(i*0.3+frame*0.01)*1.5; ctx.fillRect(i,H-18,8,h); }
+  for (const sw of seaweeds) {
+    const sway=Math.sin(frame*0.02+sw.phase)*8;
+    ctx.strokeStyle=sw.color; ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(sw.x,H-20); ctx.quadraticCurveTo(sw.x+sway-8,H-20-sw.h*0.5,sw.x+sway,H-20-sw.h); ctx.stroke();
+  }
+}
+
+function drawFish() {
+  for (const f of fish) {
+    f.x+=f.speed*f.dir;
+    if (f.x>W+30) f.x=-30; if (f.x<-30) f.x=W+30;
+    ctx.save(); ctx.translate(f.x,f.y);
+    if (f.dir<0) ctx.scale(-1,1);
+    ctx.globalAlpha=0.4; ctx.fillStyle=f.color;
+    ctx.beginPath(); ctx.ellipse(0,0,f.w/2,f.w/4,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(f.w*0.15,-f.w*0.08,f.w*0.08,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=f.color;
+    ctx.beginPath(); ctx.moveTo(-f.w/2-5,0); ctx.lineTo(-f.w/2-12,-f.w/4); ctx.lineTo(-f.w/2-12,f.w/4); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1; ctx.restore();
+  }
+}
+
+function drawStars() {
+  for (const s of stars) { ctx.globalAlpha=s.a+Math.sin(frame*0.01+s.x)*0.15; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+
+function drawBubbles() {
+  for (const b of bubbles) {
+    ctx.globalAlpha=0.12+Math.sin(frame*0.05+b.wobble)*0.08;
+    ctx.strokeStyle='#8cf'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.arc(b.x+Math.sin(frame*0.02+b.wobble)*1.5,b.y,b.r,0,Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawPearl(p) {
+  ctx.save(); ctx.translate(p.x,p.y);
+  const grad=ctx.createRadialGradient(0,0,0,0,0,p.r*2.5);
+  grad.addColorStop(0,`rgba(255,255,255,${p.glow*0.25})`); grad.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(0,0,p.r*2.5,0,Math.PI*2); ctx.fill();
+
+  const pg=ctx.createRadialGradient(-p.r*0.3,-p.r*0.3,0,0,0,p.r);
+  pg.addColorStop(0,'#fff'); pg.addColorStop(0.3,'#f8f0ff'); pg.addColorStop(0.7,'#e0d8f0'); pg.addColorStop(1,'#c0b8d8');
+  ctx.fillStyle=pg; ctx.shadowColor=`rgba(200,180,255,${p.glow*0.4})`; ctx.shadowBlur=12;
+  ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle='rgba(255,255,255,0.7)';
+  ctx.beginPath(); ctx.ellipse(-p.r*0.25,-p.r*0.25,p.r*0.2,p.r*0.12,-0.5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function drawShell(s) {
+  ctx.save(); ctx.translate(s.x,s.y); ctx.rotate(s.rot);
+  const colors=['#8a7a5a','#7a6a4a','#6a5a3a'], hl=['#b0a080','#a09060','#908050'];
+  ctx.fillStyle=colors[s.type]; ctx.strokeStyle=hl[s.type]; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.arc(0,0,s.r,0,Math.PI); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,s.r*0.55,Math.PI,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='rgba(0,0,0,0.1)'; ctx.lineWidth=0.6;
+  for (let i=0;i<4;i++) { const a=-Math.PI/2+(i/3)*Math.PI; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*s.r,Math.sin(a)*s.r*(i%2===0?0.75:1)); ctx.stroke(); }
+  ctx.restore();
+}
+
+function drawBucket() {
+  ctx.save(); ctx.translate(bucket.x,bucket.y);
+  const w=bucket.w, h=bucket.h;
+  ctx.fillStyle='#8a6a4a'; ctx.strokeStyle='#6a4a2a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-w/2,0); ctx.lineTo(-w/2+4,-h); ctx.lineTo(w/2-4,-h); ctx.lineTo(w/2,0); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle='#7a5a3a'; ctx.lineWidth=0.8;
+  for (let i=1;i<4;i++) { const yy=-h*(i/4); ctx.beginPath(); ctx.moveTo(-w/2+4,yy); ctx.lineTo(w/2-4,yy); ctx.stroke(); }
+  for (let i=1;i<6;i++) { const xx=-w/2+4+(w-8)*(i/6); ctx.beginPath(); ctx.moveTo(xx,0); ctx.lineTo(xx,-h); ctx.stroke(); }
+  ctx.fillStyle='#a08050'; ctx.strokeStyle='#6a4a2a'; ctx.lineWidth=2;
+  ctx.fillRect(-w/2-2,-h-4,w+4,5); ctx.strokeRect(-w/2-2,-h-4,w+4,5);
+  ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(0,2,w/2+3,5,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+// ============ UPDATE ============
+function update() {
+  if (!gameRunning) return;
+  frame++; gameTime++;
+  difficulty = 1 + Math.floor(gameTime/800)*0.3;
+
+  if (keys['ArrowLeft'] && bucket.x > bucket.w/2+5) bucket.x -= bucket.speed;
+  if (keys['ArrowRight'] && bucket.x < W-bucket.w/2-5) bucket.x += bucket.speed;
+
+  if (frame%Math.floor(Math.max(18,50-difficulty*4-frame*0.015))===0) spawnPearl();
+  if (frame%Math.floor(Math.max(40,80-difficulty*3))===0 && frame>80) spawnShell();
+  if (frame%6===0) spawnBubble();
+
+  for (let i=pearls.length-1;i>=0;i--) {
+    const p=pearls[i]; p.y+=p.speed; p.phase+=0.05;
+    if (p.y+p.r>bucket.y-bucket.h && p.y<bucket.y && p.x>bucket.x-bucket.w/2 && p.x<bucket.x+bucket.w/2) {
+      combo++; if (combo>maxCombo) maxCombo=combo;
+      score++; earnedThisRun++;
+      const bns=Math.floor(combo/5); score+=bns; earnedThisRun+=bns;
+      spawnParticles(p.x,p.y,'#ff8',8); spawnParticles(p.x,p.y,'#fff',4);
+      pearls.splice(i,1); updateUI(); continue;
+    }
+    if (p.y>H+p.r) { combo=0; pearls.splice(i,1); comboDisplay.style.opacity='0'; }
+  }
+
+  for (let i=shells.length-1;i>=0;i--) {
+    const s=shells[i]; s.y+=s.speed; s.rot+=s.rotSpeed;
+
+    // warning when approaching
+    if (s.y > bucket.y - bucket.h - 80 && s.y < bucket.y - bucket.h &&
+        Math.abs(s.x-bucket.x) < bucket.w/2 + 30) {
+      shellWarn.style.opacity = '0.8';
+    }
+
+    if (s.y+s.r>bucket.y-bucket.h && s.y<bucket.y && s.x>bucket.x-bucket.w/2 && s.x<bucket.x+bucket.w/2) {
+      lives--; spawnParticles(s.x,s.y,'#f44',15); spawnParticles(s.x,s.y,'#f80',8);
+      combo=0; comboDisplay.style.opacity='0'; shellWarn.style.opacity='0';
+      shells.splice(i,1); updateUI();
+      if (lives<=0) {
+        gameRunning=false;
+        save.coins+=earnedThisRun; saveSave(save);
+        finalPearls.textContent=score; finalCombo.textContent=maxCombo;
+        earnedCoins.textContent=earnedThisRun;
+        gameOverEl.style.display='block'; coinDisplay.textContent=`🪙 ${save.coins}`;
+      }
+      continue;
+    }
+    if (s.y>H+s.r) shells.splice(i,1);
+  }
+
+  // fade shell warning
+  shellWarn.style.opacity = Math.max(0, shellWarn.style.opacity*1-0.02);
+
+  for (let i=bubbles.length-1;i>=0;i--) {
+    const b=bubbles[i]; b.y-=b.speed; b.wobble+=0.03;
+    if (b.y<-10) bubbles.splice(i,1);
+  }
+  for (let i=particles.length-1;i>=0;i--) {
+    const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; p.life-=p.decay;
+    if (p.life<=0) particles.splice(i,1);
+  }
+}
+
+function updateUI() {
+  coinDisplay.textContent=`🪙 ${save.coins+earnedThisRun}`;
+  livesDisplay.textContent='❤️'.repeat(Math.max(0,lives))||'💀';
+  comboDisplay.textContent=combo>=3?`🔥 连击 x${combo}`:'';
+  comboDisplay.style.opacity=combo>=3?'1':'0';
+}
+
+// ============ DRAW MAIN ============
+function draw() {
+  drawBackground(); drawStars(); drawFish(); drawBubbles();
+  for (const s of shells) drawShell(s);
+  for (const p of pearls) drawPearl(p);
+  for (const p of particles) { ctx.globalAlpha=p.life; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); }
+  ctx.globalAlpha=1;
+  drawBucket();
+}
+
+// ============ LIFECYCLE ============
+function startGame() {
+  score=0; lives=3; combo=0; maxCombo=0; earnedThisRun=0;
+  gameRunning=true; frame=0; gameTime=0; difficulty=1;
+  gameOverEl.style.display='none'; menuEl.style.display='none';
+  pearls=[]; shells=[]; particles=[]; shellWarn.style.opacity='0';
+  applyBucket(); bucket.x=W/2; updateUI();
+}
+
+function loop() { if (gameRunning) update(); draw(); requestAnimationFrame(loop); }
+
+showMenu();
+loop();
+</script>
+</body>
+</html>

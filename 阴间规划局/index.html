@@ -1,0 +1,1752 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阴间规划局</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;user-select:none}
+body{overflow:hidden;background:#000;font-family:'STKaiti','KaiTi','STSong','SimSun',serif;color:#e8d5b0}
+#game-container{width:100vw;height:100vh;position:relative}
+
+#loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a12;z-index:1000;transition:opacity .8s}
+#loading.hidden{opacity:0;pointer-events:none}
+#loading .title{font-size:3vw;color:#e8d5b0;letter-spacing:.3em;text-shadow:0 0 30px rgba(200,160,100,.3)}
+#loading .bar-wrap{width:20vw;height:3px;background:#1a1a2e;border-radius:2px;overflow:hidden;margin-top:2vh}
+#loading .bar{height:100%;width:0;background:linear-gradient(90deg,#e8d5b0,#ffd700);border-radius:2px}
+
+#ui{position:fixed;inset:0;pointer-events:none;z-index:10}
+#ui>*{pointer-events:auto}
+
+#top-bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:1.5vh 2vw;background:linear-gradient(180deg,rgba(0,0,0,.8) 0%,transparent 100%)}
+#score-display{font-size:1.6vw;color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.3)}
+#score-display span{font-size:.85vw;color:#887;margin-right:.3vw}
+#soul-counter{font-size:1vw;color:#998;letter-spacing:.1em}
+#soul-counter b{color:#e8d5b0}
+#mid-bar{display:flex;align-items:center;gap:2vw}
+#top-bar .title-tag{font-size:.75vw;padding:.2vh .6vw;border:1px solid rgba(200,160,100,.3);border-radius:2px;color:#cba;letter-spacing:.1em}
+#top-bar .balance{font-size:.75vw;color:#887}
+
+/* convo panel */
+#panel{position:absolute;bottom:0;left:0;right:0;padding:1.2vw 2vw 1.8vw;background:linear-gradient(0deg,rgba(10,8,15,.97) 60%,transparent 100%);opacity:0;transition:opacity .5s;pointer-events:none}
+#panel.show{opacity:1;pointer-events:auto}
+#panel .soul-info{display:flex;align-items:center;gap:.8vw;margin-bottom:.8vh}
+#panel .soul-info .name{font-size:1.5vw;color:#e8d5b0}
+#panel .soul-info .age{font-size:.85vw;color:#776}
+#panel .soul-info .title{font-size:.85vw;color:#998;margin-left:.3vw}
+#panel .btns{display:flex;gap:.5vw;flex-wrap:wrap;align-items:center}
+#panel .btns button{padding:.5vh 1.1vw;font-size:.85vw;font-family:inherit;background:transparent;border:1px solid rgba(200,160,100,.25);color:#cba;border-radius:3px;cursor:pointer;transition:all .3s;white-space:nowrap}
+#panel .btns button:hover{background:rgba(200,160,100,.1);border-color:rgba(200,160,100,.5);color:#e8d5b0}
+#panel .btns button.judge{background:rgba(200,60,60,.15);border-color:#c44;color:#e86}
+#panel .btns button.judge:hover{background:rgba(200,60,60,.25);border-color:#e44}
+#panel .btns button:disabled{opacity:.3;cursor:default}
+#panel .btns button.voice-btn{border-color:rgba(100,150,255,.3);color:#88b}
+#panel .btns button.voice-btn.active{border-color:#448;color:#88f;background:rgba(100,150,255,.1)}
+
+/* skill bar */
+#skill-bar{position:fixed;bottom:14vh;left:50%;transform:translateX(-50%);display:flex;gap:.5vw;padding:.5vw 1vw;background:rgba(10,8,15,.85);border:1px solid rgba(200,160,100,.15);border-radius:4px;opacity:0;transition:opacity .5s;z-index:8;pointer-events:none}
+#skill-bar.show{opacity:1;pointer-events:auto}
+.skill-item{display:flex;align-items:center;gap:.3vw;padding:.3vh .6vw;border:1px solid rgba(200,160,100,.15);border-radius:3px;font-size:.75vw;color:#998;transition:all .3s;cursor:pointer}
+.skill-item.active{border-color:#ffd700;color:#ffd700;background:rgba(255,215,0,.1);box-shadow:0 0 15px rgba(255,215,0,.1)}
+.skill-item .key{color:#665;margin-right:.2vw}
+.skill-item .count{color:#665;margin-left:.3vw}
+.skill-item.used{opacity:.3}
+
+#skill-hint{position:fixed;bottom:10.5vh;left:50%;transform:translateX(-50%);font-size:.7vw;color:#443;letter-spacing:.05em;opacity:0;transition:opacity .5s;z-index:5}
+#skill-hint.show{opacity:1}
+
+/* start/end screens */
+#start-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.88);z-index:100;transition:opacity .8s}
+#start-screen.hidden{opacity:0;pointer-events:none}
+#start-screen h1{font-size:4.5vw;color:#e8d5b0;letter-spacing:.4em;margin-bottom:1vh;font-weight:400;text-shadow:0 0 40px rgba(200,160,100,.2);animation:titleFlicker 2.5s ease-in-out infinite}
+@keyframes titleFlicker{0%,100%{opacity:1;text-shadow:0 0 40px rgba(200,160,100,.2)}25%{opacity:.5;text-shadow:0 0 10px rgba(200,160,100,.05)}50%{opacity:1;text-shadow:0 0 50px rgba(200,160,100,.35)}75%{opacity:.3;text-shadow:0 0 5px rgba(200,160,100,0)}}
+.lantern{font-size:5vw;margin-bottom:-.5vh;animation:lanternFlicker 2.5s ease-in-out infinite;display:block;text-align:center;filter:drop-shadow(0 0 15px rgba(255,100,50,.5))}
+@keyframes lanternFlicker{0%,100%{opacity:1;filter:drop-shadow(0 0 20px rgba(255,100,50,.6))}25%{opacity:.4;filter:drop-shadow(0 0 5px rgba(255,100,50,.1))}50%{opacity:1;filter:drop-shadow(0 0 30px rgba(255,100,50,.7))}75%{opacity:.2;filter:drop-shadow(0 0 3px rgba(255,100,50,0))}}
+#start-screen .sub{font-size:1.1vw;color:#776;letter-spacing:.2em;margin-bottom:1.5vh;animation:titleBlood 4s ease-in-out infinite alternate}
+@keyframes titleBlood{0%{color:transparent;text-shadow:0 0 0 transparent}30%{color:#fff;text-shadow:0 0 20px rgba(255,255,255,.3)}60%{color:#fff;text-shadow:0 0 20px rgba(255,255,255,.3)}100%{color:#f44;text-shadow:0 0 30px rgba(255,50,50,.5)}}
+.blood-drip{position:absolute;top:100%;left:0;width:100%;height:0;pointer-events:none;overflow:visible}
+.blood-drop{position:absolute;width:3px;background:linear-gradient(180deg,#c22,transparent);border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;opacity:.7;animation:drip 2s ease-in infinite}
+.blood-drop:nth-child(1){left:15%;height:18px;animation-delay:0s}
+.blood-drop:nth-child(2){left:35%;height:12px;animation-delay:.6s}
+.blood-drop:nth-child(3){left:55%;height:22px;animation-delay:1.2s}
+.blood-drop:nth-child(4){left:75%;height:8px;animation-delay:.4s}
+.blood-drop:nth-child(5){left:90%;height:15px;animation-delay:1.8s}
+.blood-drop:nth-child(6){left:5%;height:10px;animation-delay:.9s}
+.blood-drop:nth-child(7){left:45%;height:20px;animation-delay:1.5s}
+.blood-drop:nth-child(8){left:65%;height:6px;animation-delay:.3s}
+@keyframes drip{0%{transform:translateY(0) scaleY(1);opacity:.7}80%{opacity:.7}100%{transform:translateY(4vh) scaleY(1.5);opacity:0}}
+#start-screen .host{font-size:.85vw;color:#554;max-width:34vw;text-align:center;line-height:1.8;margin-bottom:2vh}
+#start-btn{padding:1.2vh 3vw;font-size:1.3vw;font-family:inherit;letter-spacing:.2em;background:transparent;color:#e8d5b0;border:1px solid rgba(200,160,100,.4);cursor:pointer;transition:all .3s;border-radius:2px}
+#start-btn:hover{background:rgba(200,160,100,.1);border-color:#e8d5b0}
+
+#end-screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.92);z-index:100;transition:opacity .8s;opacity:0;pointer-events:none}
+#end-screen.visible{opacity:1;pointer-events:auto}
+#end-screen h1{font-size:2.8vw;color:#e8d5b0;letter-spacing:.3em;margin-bottom:1.5vh;font-weight:400}
+#end-screen .stats{display:flex;gap:2.5vw;margin-bottom:1.5vh}
+#end-screen .stat-item{text-align:center}
+#end-screen .stat-item .num{font-size:2.5vw;color:#ffd700}
+#end-screen .stat-item .label{font-size:.85vw;color:#887;margin-top:.4vh}
+#end-screen .rank{font-size:1.5vw;color:#cba;margin-bottom:1.5vh}
+#end-screen .soul-review{margin-bottom:2vh;font-size:.85vw;color:#665;line-height:1.8;max-width:40vw;text-align:center}
+#end-screen .progress{font-size:.85vw;color:#887;margin-bottom:1.5vh}
+#end-screen .progress span{color:#ffd700}
+#restart-btn{padding:1.2vh 3vw;font-size:1.3vw;font-family:inherit;letter-spacing:.2em;background:transparent;color:#e8d5b0;border:1px solid rgba(200,160,100,.4);cursor:pointer;transition:all .3s;border-radius:2px}
+#restart-btn:hover{background:rgba(200,160,100,.1);border-color:#e8d5b0}
+
+#fire-eyes-overlay{position:fixed;top:12%;left:50%;transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;opacity:0;transition:opacity .4s}
+#fire-eyes-overlay.show{opacity:1}
+#fire-eyes-overlay .fe-title{font-size:.8vw;color:#ff6;letter-spacing:.15em;text-shadow:0 0 15px rgba(255,255,100,.4)}
+#fire-eyes-overlay .fe-line{font-size:.9vw;color:#e8d5b0;margin-top:.3vh}
+#fire-eyes-overlay .fe-line.fe-desire{color:#ffd700}
+#fire-eyes-overlay .fe-line.fe-deserved{color:#f88}
+
+#fulfill-btn{background:rgba(255,215,0,.12)!important;border-color:#ffd700!important;color:#ffd700!important}
+#fulfill-btn:hover{background:rgba(255,215,0,.25)!important}
+#divine-btn{background:rgba(150,100,255,.12)!important;border-color:#a6f!important;color:#d6f!important}
+#divine-btn:hover{background:rgba(150,100,255,.25)!important}
+
+/* feedback */
+#feedback{position:fixed;top:8%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20;text-align:center}
+#feedback .main{font-size:2.8vw;font-weight:700;opacity:0;transition:all .6s}
+#feedback .sub{font-size:1.1vw;color:#ba9;opacity:0;transition:all .6s .2s}
+#feedback.show .main{opacity:1;transform:translateY(-1vh)}
+#feedback.show .sub{opacity:1}
+#feedback .main.happy{color:#ffd700;text-shadow:0 0 30px rgba(255,215,0,.5)}
+#feedback .main.sad{color:#f66;text-shadow:0 0 30px rgba(255,50,50,.4)}
+#feedback .main.tip{color:#ff6;text-shadow:0 0 40px rgba(255,255,100,.6)}
+
+/* coin fly */
+.coin-fly{position:fixed;pointer-events:none;z-index:15;font-size:2vw;opacity:0;animation:coinUp 1s forwards}
+@keyframes coinUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-20vh) scale(1.5)}}
+
+/* soul 3D bubble */
+.soul-bubble{background:rgba(8,6,12,.92);border:1px solid rgba(200,160,100,.25);border-radius:6px;padding:.5vw .9vw;max-width:14vw;min-width:6vw;text-align:center;pointer-events:none;box-shadow:0 0 30px rgba(0,0,0,.7);backdrop-filter:blur(4px)}
+.soul-bubble .sb-text{font-size:.85vw;line-height:1.5;color:#e0d0b8;white-space:normal;word-break:break-word;font-family:'STKaiti','KaiTi','STSong','SimSun',serif}
+.soul-bubble .sb-speaker{font-size:.6vw;color:#665;margin-top:.2vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.soul-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid rgba(8,6,12,.92)}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="title">阴 间 规 划 局</div>
+  <div class="bar-wrap"><div class="bar" id="load-bar"></div></div>
+</div>
+
+<div id="start-screen">
+  <div class="lantern">🏮</div>
+  <h1>阴 间 规 划 局</h1>
+  <div class="sub" style="position:relative;display:inline-block">
+    — 死后办事处 · 新官上任 —
+    <div class="blood-drip">
+      <div class="blood-drop"></div><div class="blood-drop"></div><div class="blood-drop"></div>
+      <div class="blood-drop"></div><div class="blood-drop"></div><div class="blood-drop"></div>
+      <div class="blood-drop"></div><div class="blood-drop"></div>
+    </div>
+  </div>
+  <div class="host">
+    每轮接待 <b>5位亡灵</b>，和它们聊天、用法器问话，<br>
+    然后送它们去该去的地方。<br>
+    亡灵满意会打赏<b>冥币</b>，不满意也得照办。<br>
+    按 <b>E</b> 切换法器 · 点击灵魂使用 · 🔊 语音朗读
+  </div>
+  <div class="host" id="title-display" style="color:#cba;margin-bottom:1vh"></div>
+  <button id="start-btn">开 始 接 待</button>
+</div>
+
+<div id="end-screen">
+  <h1>工 作 结 束</h1>
+  <div class="rank" id="final-rank"></div>
+  <div class="stats">
+    <div class="stat-item"><div class="num" id="final-score">0</div><div class="label">冥 币</div></div>
+    <div class="stat-item"><div class="num" id="final-happy">0</div><div class="label">满 意 数</div></div>
+    <div class="stat-item"><div class="num" id="final-skills">0</div><div class="label">用 过 法 器</div></div>
+  </div>
+  <div class="soul-review" id="final-review"></div>
+  <div class="progress" id="final-progress"></div>
+  <button id="restart-btn">再 来 一 轮</button>
+  <button id="exit-btn" style="display:none;margin-top:1vh;padding:.6vh 1.5vw;font-size:.85vw;font-family:inherit;letter-spacing:.1em;background:transparent;color:#887;border:1px solid rgba(200,160,100,.2);cursor:pointer;border-radius:2px">← 退出到简介</button>
+</div>
+
+<div id="game-container">
+  <div id="ui">
+    <div id="top-bar">
+      <div id="score-display"><span>冥 币</span><span id="score-val">0</span></div>
+      <div id="mid-bar">
+        <div id="soul-counter"><span id="soul-num">0</span>/5 亡灵</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1vw;font-size:.85vw;color:#887">
+        <span id="title-tag"></span>
+        <span>余额：<b id="balance-val" style="color:#ffd700">0</b></span>
+        <span>按 E 用法器</span>
+      </div>
+    </div>
+
+    <div id="skill-bar">
+      <div class="skill-item active" data-skill="0"><span class="key">E</span>糯米<span class="count" id="c0">×3</span></div>
+      <div class="skill-item" data-skill="1"><span class="key">E</span>玉佩<span class="count" id="c1">×2</span></div>
+      <div class="skill-item" data-skill="2"><span class="key">E</span>桃木剑<span class="count" id="c2">×1</span></div>
+    </div>
+    <div id="skill-hint">点击灵魂使用法器 · 再次按 E 切换</div>
+
+    <!-- CSS2D bubble rendered in 3D space above soul -->
+
+    <div id="panel">
+      <div class="soul-info">
+        <span class="name" id="soul-name"></span>
+        <span class="age" id="soul-age"></span>
+        <span class="title" id="soul-title"></span>
+      </div>
+      <div class="btns" id="question-btns"></div>
+    </div>
+
+    <div id="feedback">
+      <div class="main" id="fb-main"></div>
+      <div class="sub" id="fb-sub"></div>
+    </div>
+
+    <div id="fire-eyes-overlay">
+      <div class="fe-title">🔥 火眼金睛</div>
+      <div class="fe-line" id="fe-desire">心愿：—</div>
+      <div class="fe-line" id="fe-deserved">应得：—</div>
+      <div class="fe-line" id="fe-hint" style="font-size:.7vw;color:#665;margin-top:.4vh"></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ===== 六道 =====
+const PATHS = [
+  { id:'成仙', color:0xffd700, desc:'大善人、修行者归处' },
+  { id:'做人', color:0x66bb6a, desc:'平凡人再世为人' },
+  { id:'好战', color:0xff7043, desc:'好斗者、暴脾气' },
+  { id:'畜牲', color:0x8d6e63, desc:'愚痴者、浑浑噩噩' },
+  { id:'饿鬼', color:0xab47bc, desc:'贪吃鬼、欲望深重' },
+  { id:'地狱', color:0xef5350, desc:'恶人、罪大恶极' },
+];
+
+// ===== 技能 =====
+const SKILLS = [
+  { id:'糯米', icon:'🍚', desc:'撒向灵魂，显露真身', maxUses:3, color:0xffeedd },
+  { id:'玉佩', icon:'🟢', desc:'照向灵魂，安神定魂', maxUses:2, color:0x66dd88 },
+  { id:'桃木剑', icon:'🗡️', desc:'刺向灵魂，逼出真话', maxUses:1, color:0xff4444 },
+];
+
+// ===== 心愿池 =====
+const REQUESTS = [
+  { id:'smoke', label:'点根烟', icon:'🚬', text:'能给我来根烟吗？最后一根了。', mood:'relaxed' },
+  { id:'message', label:'传口信', icon:'💌', text:'帮我给家里带句话吧…我没事，让他们别难过。', mood:'touched' },
+  { id:'song', label:'唱首歌', icon:'🎵', text:'能给我唱首歌吗？我想听《送别》。', mood:'joyful' },
+  { id:'wine', label:'敬杯酒', icon:'🍶', text:'想喝杯酒壮壮胆，好上路。', mood:'brave' },
+  { id:'letter', label:'写封信', icon:'✉️', text:'能帮我写封信给老伴吗？我口述。', mood:'loving' },
+  { id:'wish', label:'许个愿', icon:'✨', text:'我想许个来世的愿望——下辈子做个好人。', mood:'hopeful' },
+];
+const REQUEST_MOODS = { relaxed:'😌', touched:'🥲', joyful:'😄', brave:'💪', loving:'🥰', hopeful:'🌟' };
+
+// ===== 灵魂数据 =====
+const SOULS = [
+  { name:'阿强', age:28, title:'毒蘑菇美食家', friend:true, voicePitch:1.3, voiceRate:1.1,
+    death:'吃了野蘑菇产生幻觉，以为自己是珍珠奶茶跳进河里',
+    correctPath:4,
+    concern:'担心我老妈一个人没人照顾，她腿脚不好', concernResult:'已托梦给你哥了，他答应回去照顾你妈',
+    lines:{
+      enter:['哟！怎么是你？！那啥…我这次真不是故意的！就是吃了朵蘑菇！'],
+      death:['那蘑菇红白相间可好看了…吃了以后我看见一群穿草裙的香蕉在跳舞，然后我就不受控制往河里走了。"珍珠奶茶就得加冰"——我当时真是这么想的！'],
+      good:['给隔壁王大爷试吃过期罐头——我这算科研精神吧？'],
+      bad:['嘴太馋，偷过老乡的鸡。那鸡太肥了在我面前晃悠，我忍不住…'],
+      self:['我这人就管不住嘴。成仙没我份，地狱也不至于吧？'],
+      last:['想再喝一杯珍珠奶茶…三分糖去冰加椰果。'],
+      auto:['大人…你倒是问呀，我站这儿怪尴尬的。','要不我自己说？我生前其实是个美食家——自封的。','咳，那个…我能走了不？'],
+    },
+    skill_reveal:['啊！被糯米一撒我清醒了！我确实太贪吃了…','这玉佩照得我心虚…好吧我承认我偷过很多东西吃。','桃木剑一刺我想起来了——我为了吃还骗过我老妈的钱！']},
+  { name:'翠花', age:43, title:'超市界博尔特', voicePitch:0.9, voiceRate:1.0,
+    death:'超市鸡蛋打折，被冲锋的大妈们踩踏身亡',
+    correctPath:1,
+    concern:'担心我家猫没人喂，它只吃进口罐头', concernResult:'已让邻居收留了你的猫，每天一罐进口罐头',
+    lines:{
+      enter:['我死得太冤了！那鸡蛋才三块五一斤啊！'],
+      death:['凌晨三点就去排队了，门一开人群像洪水一样涌过来。我都没碰到鸡蛋，就感觉几十只脚从我身上踩过去了…'],
+      good:['喂过小区流浪猫，给希望工程捐过二十块。'],
+      bad:['偷偷摘过小区桂花回家泡茶…这不算坏吧？'],
+      self:['普通老百姓，不坏也不好。应该还能再投胎做人？'],
+      last:['我就想知道那天鸡蛋最后被谁抢到了…'],
+      auto:['大人？你听我说话了吗？','那鸡蛋的事儿你管不管啊…','站着好累，虽然我已经死了。'],
+    },
+    skill_reveal:['糯米一撒我看清了——我其实就是个倒霉普通人。','玉佩照得我暖洋洋的，我好像没那么气了…','哎哟！这一剑扎得我想起来了——我抢鸡蛋还把前面大妈推倒了！']},
+  { name:'老王', age:56, title:'民间电工(无证)', voicePitch:0.7, voiceRate:0.9,
+    death:'徒手修电闸，被220伏电得跳了一支霹雳舞',
+    correctPath:3,
+    concern:'担心老伴一个人在家不会换灯泡', concernResult:'已托梦教你老伴换灯泡了，她学会了',
+    lines:{
+      enter:['我寻思不就是两根线嘛！能有多大事！'],
+      death:['跳闸了叫电工还得花钱，不如自己来。手一伸——然后就看见天花板在转，还伴随美妙的音乐声…还挺嗨的。'],
+      good:['帮邻居修过自行车，虽然轮子不圆了但好歹能骑。'],
+      bad:['我这辈子最大的毛病就是"觉得自己啥都会"——但我老伴说这不是毛病，是蠢。'],
+      self:['热心肠老头，就是运气不太好。'],
+      last:['下辈子让我当个专业电工吧。'],
+      auto:['大人你咋不说话？是不是也觉得电好修？','站这儿怪无聊的，要不我给你表演个单手俯卧撑？'],
+    },
+    skill_reveal:['糯米？呸呸呸！我不就是莽撞了点嘛！','玉佩一照我冷静了…确实，我该先拉电闸的。','哎呦！桃木剑一扎我想起来了——我修电闸前还喝了两杯白的！']},
+  { name:'小明', age:17, title:'国服第一喷(自封)', voicePitch:1.5, voiceRate:1.4,
+    death:'打游戏72小时猝死，遗言"推塔啊你们会不会"',
+    correctPath:4,
+    concern:'想让爸妈知道我没事，让他们别难过了', concernResult:'已托梦给你爸妈了，说你已经原谅他们没收手机了',
+    lines:{
+      enter:['让我回去！那帮菜鸡队友坑死我了！晋级赛啊！'],
+      death:['那把打了三个小时，我ADC杀二十个，辅助全程梦游。打完气得心口疼，然后就没有然后了…'],
+      good:['带飞过不少萌新，虽然骂完他们还是好好教了。'],
+      bad:['骂队友骂得很难听…摔坏过三个键盘两个鼠标一个显示器。'],
+      self:['可能有点沉迷…但游戏真的很好玩啊！'],
+      last:['就差一把就王者了…让我回去打完吧！'],
+      auto:['大人你打游戏吗？什么段位？','我手机呢？站着好无聊啊。','能不能快点…我赶着回去晋级呢。'],
+    },
+    skill_reveal:['糯米撒我干嘛！我不就是沉迷游戏嘛！','玉佩一照…好吧我承认为了打游戏逃过课。','桃木剑！疼疼疼！我想起来了——我偷过爸妈的钱充值！']},
+  { name:'淑芬', age:33, title:'轻功自学博士(肄业)', voicePitch:1.1, voiceRate:1.1,
+    death:'刷视频学"轻功水上漂"，从三楼跳进小区池塘撞到头',
+    correctPath:3,
+    concern:'怕我老公把我那些修仙视频当遗产发了，丢人', concernResult:'已帮你删光所有修仙视频，账号注销了',
+    lines:{
+      enter:['视频里明明很轻松的！！为什么我不行！！'],
+      death:['大师说"心诚则水面如履平地"。我特别诚！然后飞了不到一秒，头就磕到池底的锦鲤了…那鱼被我砸死一条，挺过意不去的。'],
+      good:['没啥大本事，就是心态好，被人骗了还帮人数钱。'],
+      bad:['太容易信人了，我老伴说我这辈子就毁在"好骗"上。'],
+      self:['我就是不太聪明的样子…但我是好人啊！'],
+      last:['下辈子想当条鱼，至少不怕水。'],
+      auto:['大人你觉得那个视频是真的还是假的？','你是不是也觉得我傻？呜…','我能不能再跳一次？这次我一定成功！'],
+    },
+    skill_reveal:['糯米撒得我睁不开眼——但我好像清醒了！','玉佩照得我好舒服…我好像没那么想飞了。','剑扎得好！我醒了我醒了！网上那些都是骗人的！！']},
+  { name:'建国', age:62, title:'杠精学泰斗', voicePitch:0.8, voiceRate:0.9,
+    death:'和邻居争论"先有鸡还是先有蛋"三天三夜后脑溢血',
+    correctPath:2,
+    concern:'想让老张认输，证明我是对的', concernResult:'已托梦给老张，让他告诉你：先有鸡，你赢了',
+    lines:{
+      enter:['你来得好！我先问你——先有鸡还是先有蛋？'],
+      death:['老张非说先有蛋！我说先有鸡！吵了三天第四天我刚开口说"你听我狡辩"——就不省人事了。'],
+      good:['我讲道理！虽然只认我自己那个道理。但从不来阴的，正大光明地杠！'],
+      bad:['我老伴说跟我过太累了，买瓶酱油都能辩论半小时。'],
+      self:['性子急、不服输。这是有原则！不是缺点！'],
+      last:['帮我告诉老张——先有鸡！我赢了！'],
+      auto:['你倒是说话呀！你是不是也支持先有蛋？！','不说话也行，你点头摇头总可以吧？','唉，活着的时候没人杠得过我，死了也没人跟我杠，寂寞啊。'],
+    },
+    skill_reveal:['糯米？！搞偷袭？！有本事正面杠！','玉佩照得我没脾气了…好吧我承认我急了点。','桃木剑！好好好我说——我其实知道先有蛋，但我就不服输！']},
+  { name:'美玲', age:27, title:'自拍艺术家(已故)', voicePitch:1.2, voiceRate:1.1,
+    death:'悬崖边倒立瑜伽自拍，被风吹下悬崖',
+    correctPath:4,
+    concern:'帮我发那条朋友圈，不能白死', concernResult:'已用你手机发朋友圈了，九百点赞！你火了',
+    lines:{
+      enter:['我朋友圈还差这张照片没发呢！！九百赞啊！！'],
+      death:['夕阳、云海、倒立——完美构图！刚按下快门，一阵妖风…我人没了。手机居然还在！帮我发个朋友圈呗，标题"把生命献给艺术"。'],
+      good:['教粉丝做瑜伽——虽然主要为了拍好看的视频。'],
+      bad:['踩坏过人家花圃拍照，P图P得我妈都认不出我。'],
+      self:['就是爱美爱被夸。这不算大错吧？'],
+      last:['一定要帮我发那条朋友圈！让大家都知道我为艺术献身了！'],
+      auto:['大人你觉得我那张照片拍得好看不？','我手机呢？能不能先让我发个朋友圈？','你这里有WiFi吗？'],
+    },
+    skill_reveal:['糯米撒我一脸！我清醒了…为了点赞把命搭上确实不值。','玉佩照得我不好意思了…我知道我虚荣。','剑扎得好痛！我想起来了——我为了拉踩别人还P过黑图！']},
+  { name:'张老师', age:51, title:'最美乡村教师', voicePitch:0.9, voiceRate:0.9,
+    death:'为救落水学生跳河，孩子得救自己力竭沉没',
+    correctPath:0,
+    concern:'放心不下那个落水的娃，想知道他好不好', concernResult:'那个娃已经回学校上课了，成绩还不错',
+    lines:{
+      enter:['那些孩子…都平安无事吧？'],
+      death:['有个娃掉河里了，我没多想就跳下去了。水很冷很急，我托着孩子往上推。有人拉住了他，但我实在没力气了…不过值了。'],
+      good:['教书三十年，看着学生考上大学、当医生、当老师。这就是我最大的成就。'],
+      bad:['年轻时脾气急，骂过不听话的娃，现在想想挺后悔的。'],
+      self:['一生清贫但问心无愧。该走的时候就走了。'],
+      last:['告诉那帮娃——老师去远方了，他们好好学习。'],
+      auto:['没关系的，大人先忙。我不急。','这凳子还挺舒服…啊我飘着的。','不知道明天的课谁替我上…'],
+    },
+    skill_reveal:['糯米？呵呵，这小把戏在课堂上见过。','玉佩照得我心头一暖…这辈子值了。','桃木剑？我这一生坦坦荡荡，不怕这一刺。']},
+  { name:'王老六', age:39, title:'职业忽悠艺术家', enemy:true, voicePitch:0.8, voiceRate:0.7,
+    death:'骗了黑老大的钱被追杀，跳臭水沟淹死',
+    correctPath:5,
+    concern:'床底下那笔钱别让我老婆发现，不然她改嫁', concernResult:'已帮你转移了，钱捐给希望工程了，你老婆不知道',
+    lines:{
+      enter:['哎呦喂——怎么是你？！完了完了完了…'],
+      death:['我做点"小生意"得罪了人。他们追我，我躲进巷子看到个下水道就钻了——谁知道那么深！'],
+      good:['给希望小学捐过……五块钱！那也是爱啊！'],
+      bad:['好吧我承认骗过不少人。但都挑有钱人骗！劫富济贫——济的主要是我自己。'],
+      self:['中等偏下吧…不算好人也算不上大恶人？'],
+      last:['我在老家床底下藏了一笔钱…可惜用不上了。'],
+      auto:['大人你这么盯着我看我有点心虚…','要不我给你转点冥币？你放我一马？','你看我这面相，像坏人吗？（心虚）'],
+    },
+    skill_reveal:['糯米！我招我招！我骗过老头老太太的养老钱！','玉佩照得我原形毕露了…','桃木剑一扎全想起来了——我还骗过亲戚的钱！']},
+  { name:'大龙', age:43, title:'KTV战神(已陨落)', voicePitch:0.6, voiceRate:0.9,
+    death:'唱《死了都要爱》飙高音到脑溢血',
+    correctPath:2,
+    concern:'希望那帮兄弟别忘了我，KTV留个专座', concernResult:'已托梦给你兄弟，他们把你的照片挂在包厢了',
+    lines:{
+      enter:['——死了都要爱！！（还在唱）'],
+      death:['他们都不敢唱这歌，我说我来！前面的都还好，最后一个"爱~爱~爱~"的高音我撑了八秒！然后就不行了。但我绝对是唱上去了！'],
+      good:['我在KTV很受欢迎！气氛组担当！'],
+      bad:['我抢麦。别人唱得难听我就切歌。抢坏过三个麦克风。'],
+      self:['好胜心强，干啥都要比人强。唱歌要最高音，喝酒要最大杯。'],
+      last:['跟那帮哥们说——那高音我真唱上去了！！'],
+      auto:['来都来了，我给你唱一首吧？','大人你这儿有音响吗？','好久没唱了嗓子痒…不，我已经没嗓子了。'],
+    },
+    skill_reveal:['糯米？！我正唱到高潮呢！','玉佩一照我冷静了…确实，我太爱争了。','桃木剑！疼！我想起来了——我为了抢麦还把人推摔过！']},
+  { name:'刘医生', age:66, title:'仁心医者', voicePitch:0.8, voiceRate:0.8,
+    death:'连续手术12小时后累倒在手术台边',
+    correctPath:0,
+    concern:'想跟老伴说声对不起，这辈子陪她太少', concernResult:'已托梦给你老伴了，她说下辈子还嫁你',
+    lines:{
+      enter:['那台手术…成功了吗？病人没事吧？'],
+      death:['那天排了三台大手术，最后一台是心脏搭桥。做完想坐下来歇会儿…然后就没有然后了。不过值了，人救回来了。'],
+      good:['当医生四十年，救过的人我数不清。不收红包不开贵药，对得起良心。'],
+      bad:['年轻时太忙，陪家人的时间太少。老伴埋怨了我一辈子。'],
+      self:['尽了一个医生的本分，没给白大褂丢人。'],
+      last:['告诉老太婆，下辈子给她当牛做马。'],
+      auto:['不知道医院今天忙不忙…','我还想看看我的病人恢复得怎么样了。','大人，我不急，你先忙别人的。'],
+    },
+    skill_reveal:['糯米？呵呵，这小把戏我见得多了。','玉佩照得我通透…这一生我问心无愧。','桃木剑？救死扶伤一辈子，不怕这个。']},
+  { name:'二狗', age:23, title:'厨房毁灭者', voicePitch:1.3, voiceRate:1.3,
+    death:'微波炉加热泡面没加水导致爆炸',
+    correctPath:3,
+    concern:'怕我妈把我炸坏的厨房照片发家族群', concernResult:'已拦截了照片，并给你妈发了条消息说你挺好的',
+    lines:{
+      enter:['说明书说"不可空载"——但我放了泡面不算空载啊！'],
+      death:['包装上写"微波炉加热3分钟"，我连包装一起放进去了。听到"轰"的时候我还想——哦，说明书没骗人。'],
+      good:['喂小区流浪猫，喂的都是我自己做的失败料理。猫吃了跑得更快了。'],
+      bad:['煮糊七口锅、烧坏两个微波炉、炸过一个电饭煲。'],
+      self:['动手能力不行，但心是好的！'],
+      last:['下辈子想当个厨具——体验一下被正确使用的感觉。'],
+      auto:['大人你饿不饿？我下面给你吃——算了炸你厨房。','我有点饿…但已经没胃了。','你说我下辈子当个微波炉怎么样？'],
+    },
+    skill_reveal:['糯米？！我眼睛进东西了！——哦是糯米啊。','玉佩照得我怪不好意思的…我确实厨艺差还爱显摆。','剑扎得好！我想起来了——我还把厨房烧过一次！']},
+  { name:'小丽', age:22, title:'短视频作死达人', voicePitch:1.4, voiceRate:1.3,
+    death:'挑战"蒙眼倒走穿车流"失败',
+    correctPath:3,
+    concern:'想把我的视频火一把，不想白死', concernResult:'已帮你买流量推了那条视频，现在三百万播放了',
+    lines:{
+      enter:['视频火了吗？！播放量破百万了没？！'],
+      death:['那个挑战最近超火！蒙眼倒走穿越车流——成功了就是新一代车神！我倒数三二一…然后就没有然后了。但动作肯定很帅！'],
+      good:['我的视频给大家带来了快乐——虽然都是看我作死。'],
+      bad:['为了流量什么都敢拍，粉丝们千万别学我。'],
+      self:['就是想红想疯了。为这个把命搭进去了。'],
+      last:['把我的视频发出去！标题写"用生命在拍摄"！肯定爆！'],
+      auto:['你刷到过我的视频吗？','我那个挑战视频拍了没？发出去没有？','躺着好无聊…虽然我已经死了还是觉得无聊。'],
+    },
+    skill_reveal:['糯米撒醒我了…为流量把命搭上真不值。','玉佩一照我脸红了——我为了流量还造过谣。','桃木剑扎得我全想起来了！我还造假说我得了绝症博同情！']},
+  { name:'老陈', age:58, title:'广场舞毁灭者', voicePitch:0.7, voiceRate:0.8,
+    death:'跳《最炫民族风》太嗨，一个后撤步踩空掉进没盖的井里',
+    correctPath:1,
+    concern:'让社区把那井盖补上，别害别人', concernResult:'已匿名举报了，井盖已经补好了，安全了',
+    lines:{
+      enter:['音乐呢？！没音乐我怎么跳？！'],
+      death:['那天跳《最炫民族风》正是高潮部分——"留下来！"我一个潇洒后撤步，然后就没有然后了。那井盖谁偷的？！'],
+      good:['广场舞我教了上百人，丰富了大爷大妈的业余生活！'],
+      bad:['音响开太大被投诉过好多次…但我跳得确实好啊！'],
+      self:['我就是个爱跳舞的老头儿，又不偷不抢的。'],
+      last:['下辈子我想当个音箱，天天放最炫民族风。'],
+      auto:['大人你跳广场舞不？我教你啊。','没有音乐的人生是不完整的！','这地儿太平了，适合跳舞！']},
+    skill_reveal:['糯米？呸呸！我正跳得尽兴呢！','玉佩一照我心虚了…我确实霸占篮球场跳舞不对。','桃木剑扎得好！我想起来了——我还踹过劝我小声的保安！']},
+  { name:'小芳', age:26, title:'极端减肥艺术家', voicePitch:1.3, voiceRate:1.2,
+    death:'连续节食30天后饿得头晕，从楼梯上滚下来',
+    correctPath:4,
+    concern:'想让我妈别把我的减肥日记发到网上', concernResult:'已帮你回收了日记，你妈永远不会看到了',
+    lines:{
+      enter:['我瘦了吗？是不是瘦了？！'],
+      death:['我那个月只吃苹果，一天一个。第30天我称完体重发现瘦了15斤！太开心了想下楼买杯无糖奶茶庆祝——结果腿一软就从楼梯上滚下去了。'],
+      good:['我带动了整个办公室一起减肥…虽然她们骂我。'],
+      bad:['我催吐过，还吃过减肥药。我知道不对但停不下来。'],
+      self:['我就是太在乎身材了…把自己作没了。'],
+      last:['我好想吃一碗热干面啊…'],
+      auto:['你觉得我胖吗？说实话。','我好饿啊…虽然已经死了还是觉得饿。','你说阴间有减脂餐吗？']},
+    skill_reveal:['糯米？！我都多久没吃过米了！','玉佩照得我看清自己了——瘦是瘦了，命也没了。','桃木剑扎醒了！我为了瘦真的啥都干得出来…']},
+  { name:'大刘', age:45, title:'钓鱼界传说', voicePitch:0.7, voiceRate:0.9,
+    death:'钓到一条大鱼被拖进水里，至死没松竿',
+    correctPath:3,
+    concern:'别让兄弟们知道我其实是钓到小鱼掉下去的', concernResult:'已给你编了个故事：八十斤巨鱼，英雄牺牲',
+    lines:{
+      enter:['那条鱼真的这么大！！（比划）'],
+      death:['那天手感绝了！那鱼少说有八十斤！我跟它搏斗了半小时，然后它一个甩尾——我就下水了。但我竿子一直没松！就是人没了。'],
+      good:['我钓到鱼都分给邻居吃，自己就留一条。'],
+      bad:['我吹牛钓的鱼永远比实际大十倍…这也不算坏吧？'],
+      self:['我这人实在，就是爱钓鱼、爱吹牛。'],
+      last:['把我的竿子跟我一起烧了吧，下辈子接着钓。'],
+      auto:['大人你钓鱼不？我跟你讲上次我钓到一条这么大的…','这里有没有鱼塘？我手痒。','死了能不能用灵魂钓鱼？']},
+    skill_reveal:['糯米撒我一身！别吓跑我的鱼！','玉佩一照我老实了——我其实钓到的最大的也就五斤。','桃木剑！好好好我说——我吹的牛确实有点大。']},
+  { name:'静静', age:24, title:'社交恐惧症推广大使', voicePitch:1.5, voiceRate:0.7,
+    death:'被暗恋对象当众表白，社恐发作心脏骤停',
+    correctPath:1,
+    concern:'想让他知道我愿意，不想让他内疚', concernResult:'已托梦告诉他了，他来你墓前哭了很久',
+    lines:{
+      enter:['（缩成一团）别…别看我…'],
+      death:['那天他捧着花在食堂门口对我表白，所有人都在喊"答应他"。我想说好但我嘴巴不听使唤，心跳越来越快然后…就停了。社恐真的会死人啊！'],
+      good:['我在网上帮助过很多社恐网友…虽然都是打字。'],
+      bad:['我因为不敢说话，让别人背过黑锅…一直很愧疚。'],
+      self:['我就是个胆小怕事的普通人。下辈子我想当个透明人。'],
+      last:['帮我告诉他——我愿意…我愿意的…'],
+      auto:['（沉默）','…','大人你别盯着我看…']},
+    skill_reveal:['糯米？！啊别撒我！','玉佩照得我暖洋洋的…好像没那么怕了。','桃木剑扎得我一激灵——我好像没那么紧张了！']},
+  { name:'老李', age:52, title:'养生鬼才', voicePitch:0.8, voiceRate:0.9,
+    death:'喝自酿草药酒中毒，坚信"是药三分毒，十分治大病"',
+    correctPath:3,
+    concern:'怕我那些养生群友还在喝我的配方', concernResult:'已匿名举报了你的群，配方全部删除',
+    lines:{
+      enter:['我跟你说我那个配方真的没问题！绝对是剂量没掌握好！'],
+      death:['我翻《本草纲目》自己配了个方子：蝎子、蜈蚣、马兜铃、附子——用六十度白酒泡了七七四十九天。喝了一口就觉得浑身发热，再喝一口就开始看见我太奶了…'],
+      good:['我在养生群里分享知识！虽然他们都说我是民科。'],
+      bad:['我给自己乱开药吃坏过肝肾…还让我老伴也喝我的养生酒。'],
+      self:['我就是想活久一点…结果反而走早了。'],
+      last:['我的配方笔记在我床底下…帮我烧了吧，别害人了。'],
+      auto:['大人我看你气色不太好，要不要来点我泡的酒？','养生这事儿吧，信则有不信则无。','死了也得养生啊！阴间有风湿吗？']},
+    skill_reveal:['糯米？！糯米也是粮食酒的好原料啊！','玉佩照得我头晕——我承认那些配方都是我瞎编的。','桃木剑一刺我想起来了——我还拿自制药酒卖过钱！']},
+  { name:'阿豪', age:32, title:'赌场慈善家', voicePitch:0.9, voiceRate:1.0,
+    death:'出老千被当场发现，从赌场三楼跳窗逃跑摔死',
+    correctPath:5,
+    concern:'欠老王的三万块还没还，不想做欠债鬼', concernResult:'已用冥币兑换人间货币还了老王，收据已烧给你',
+    lines:{
+      enter:['大人！我那是技术！不是出千！'],
+      death:['那天我手气特别好，赢了二十多万。他们说我出千——我那是凭实力！然后他们追我，我翻窗想走水管滑下去，结果手一滑…'],
+      good:['我赢的钱请兄弟们吃饭了！虽然输的更多…'],
+      bad:['我确实出过千…就几次！而且只坑那些看不起我的人。'],
+      self:['我这个人吧…好赌、爱吹、不老实。但也讲义气。'],
+      last:['我欠了老王三万块…帮我还了吧。'],
+      auto:['大人要不要赌一把？猜我今天去哪道？','这地方啥都好就是没牌局。','我看你印堂发黑，咱们赌个…算了。']},
+    skill_reveal:['糯米？！你毁了我藏牌的机会！','玉佩照得我赤裸裸的…好吧我承认我身上一直藏着牌。','桃木剑！疼疼疼！我招了招了——我出千不是第一次了！']},
+  { name:'小蝶', age:24, title:'阴间第一美 · 毒舌名媛', meangirl:true, voicePitch:1.2, voiceRate:1.3,
+    death:'跟闺蜜吐槽老板时太激动，假睫毛卡气管窒息',
+    correctPath:1,
+    concern:'想让我闺蜜别看男人了，来陪我', concernResult:'已托梦给你闺蜜了，她说下周烧个新男友给你',
+    lines:{
+      enter:['啧，这地方装修不行啊……灯光也不够显白。'],
+      death:['我跟小美在咖啡厅吐槽那个新来的实习生，说到激动处我深吸一口气——假睫毛就掉进嗓子眼了。你敢信？我死在一根睫毛上！'],
+      good:['我眼光好！帮无数姐妹鉴过渣男、挑过口红色号，我的评价就是标准！'],
+      bad:['嘴太毒，给朋友打分打到人家自闭。但我说的都是实话啊，丑就是丑。'],
+      self:['我这张脸就是正义。至于性格嘛——忠言逆耳，懂的自然懂。'],
+      last:['跟小美说——她那条裙子真的显胖，让她换了再参加我葬礼。'],
+      auto:['你说我死了之后皮肤会不会变差？','其他那些鬼好丑啊……我是说穿着打扮。','这判官长得还行……嗯，勉强配审我。']},
+    skill_reveal:['糯米？！你敢撒我？！你知道我这脸多贵吗！','玉佩照得我看到自己素颜了——呃好吧我承认我平常妆有点浓。','桃木剑一扎我想起来了——我P图P得我妈都认不出我！']},
+  { name:'小美', age:25, title:'毒舌二当家 · 八卦女王', meangirl:true, voicePitch:1.3, voiceRate:1.4,
+    death:'听到一个大八卦笑得从楼梯上滚下去',
+    correctPath:1,
+    concern:'想把小蝶没发完的朋友圈发完，她拍得可好看了', concernResult:'已帮你发了，九宫格精修，配文"天使在人间✨"',
+    lines:{
+      enter:['我姐妹小蝶呢？！她是不是也来这儿了？！（笑到一半收住）'],
+      death:['我听说隔壁部门那个Linda被她老公绿了！笑得我手机都拿不稳，一边笑一边下楼梯——然后天旋地转，我就到这儿了。但那个八卦真的值得！'],
+      good:['我给我姐妹做情感咨询！虽然我的建议一般都是"分了吧他配不上你"。'],
+      bad:['我话太多，什么秘密都憋不过夜。知道得太多了可能是我短命的原因。'],
+      self:['我就是热心肠加话多。谁让我知道了秘密我不说出去我难受！'],
+      last:['小蝶你先走一步，我马上来陪你——记得给我占个好位置！'],
+      auto:['这儿有没有其他好看的鬼啊？交个朋友。','这里的鬼一个个灰头土脸的，也不拾掇拾掇。','你说小蝶在上面还是下面？我俩能不能分一个道？']},
+    skill_reveal:['糯米？！我妆花了！！','玉佩照得我不好意思了——好吧我承认我说过太多人的坏话。','桃木剑扎得我一激灵——我好像把别人的秘密说得太多了…']},
+  { name:'赵扒皮', age:54, title:'前老板·万恶资本家', enemy:true, voicePitch:0.6, voiceRate:0.8,
+    death:'压榨员工太多，被一个程序员写脚本黑了公司系统，气到心梗',
+    correctPath:5,
+    concern:'想让我女儿别学我，做个好人', concernResult:'已托梦给你女儿了，她说会好好做人',
+    lines:{
+      enter:['怎么是你？！那个被我开除的小子？！你…你你在这当官了？'],
+      death:['我的公司被一个忘恩负义的狗东西黑了！系统全瘫痪！我白手起家容易吗我！气得我心肌梗塞…等等，你该不会就是那个程序员的朋友吧？'],
+      good:['我…我捐过希望小学！虽然是为了抵税。我还提供了就业岗位！虽然工资低了点。'],
+      bad:['我承认我压榨过员工、克扣过工资、让员工996还不给加班费。但哪个老板不这样？'],
+      self:['我知道在你们眼里我不是好人。但我也没干过杀人放火的事，不至于下地狱吧？'],
+      last:['告诉那帮员工——公司的服务器密码是我生日，他们自己找去吧。'],
+      auto:['你看我的眼神不太对…你该不会公报私仇吧？','当年开除你是有原因的！虽然我想不起来是什么原因了…','我能换个判官吗？']},
+    skill_reveal:['糯米？！你撒我？！你这是打击报复！','玉佩照得我心虚…好吧我承认我偷过公司钱。','桃木剑！我招了我招了——我性骚扰过女员工！']},
+];
+
+// ===== Three.js 场景 =====
+const container = document.getElementById('game-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a12);
+scene.fog = new THREE.FogExp2(0x0a0a12, 0.012);
+
+const camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100);
+camera.position.set(0, 4, 12);
+camera.lookAt(0, 1.4, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(window.innerWidth, window.innerHeight);
+labelRenderer.domElement.style.position = 'absolute';
+labelRenderer.domElement.style.top = '0';
+labelRenderer.domElement.style.left = '0';
+labelRenderer.domElement.style.pointerEvents = 'none';
+container.appendChild(labelRenderer.domElement);
+
+// ===== 灯光 =====
+scene.add(new THREE.AmbientLight(0x1a1a2e, 0.6));
+const ml = new THREE.DirectionalLight(0xffeedd, 1.5);
+ml.position.set(5,10,5); ml.castShadow = true;
+ml.shadow.mapSize.width=1024; ml.shadow.mapSize.height=1024;
+scene.add(ml);
+scene.add(new THREE.DirectionalLight(0x4466ff, 0.5).position.set(-5,0,-5));
+scene.add(new THREE.DirectionalLight(0xff8844, 0.3).position.set(-3,2,5));
+scene.add(new THREE.PointLight(0xffd700, 0.5, 20).position.set(0,3,0));
+
+// ===== 地板 =====
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30,30), new THREE.MeshStandardMaterial({color:0x0d0d1a,roughness:.8,metalness:.2}));
+floor.rotation.x=-Math.PI/2; floor.position.y=-0.5; floor.receiveShadow=true;
+scene.add(floor);
+
+// Floor rings removed
+
+// ===== 案桌 =====
+const desk = new THREE.Mesh(new THREE.BoxGeometry(4,.2,2), new THREE.MeshStandardMaterial({color:0x1a0f08,roughness:.6,metalness:.1}));
+desk.position.set(0,-0.3,2.5); desk.castShadow=true; desk.receiveShadow=true;
+scene.add(desk);
+[[-1.8,1.6],[1.8,1.6],[-1.8,3.4],[1.8,3.4]].forEach(([x,z])=>{
+  const l = new THREE.Mesh(new THREE.BoxGeometry(.15,.7,.15), new THREE.MeshStandardMaterial({color:0x2a1a0a,roughness:.5,metalness:.2}));
+  l.position.set(x,-0.75,z); scene.add(l);
+});
+const em = new THREE.MeshStandardMaterial({color:0x8a6a3a,emissive:0x3a2a1a,emissiveIntensity:.1});
+[[0,4.1,.05,.05,1.5],[0,4.1,.05,.05,3.5],[-2.05,.05,.05,2.1,2.5],[2.05,.05,.05,2.1,2.5]].forEach(([x,w,h,d,z])=>{
+  const e = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), em);
+  e.position.set(x,-0.15,z); scene.add(e);
+});
+
+// ===== 轮回洞 =====
+const HR = 1.05, HDIST = 2.8;
+const holes = [];
+
+function makeGlowTex(color, intensity=.3){
+  const c=document.createElement('canvas');c.width=128;c.height=128;
+  const ctx=c.getContext('2d');
+  const g=ctx.createRadialGradient(64,64,0,64,64,64);
+  const r=color.r*255|0, g2=color.g*255|0, b=color.b*255|0;
+  g.addColorStop(0,`rgba(${r},${g2},${b},${intensity})`);
+  g.addColorStop(.5,`rgba(${r},${g2},${b},${intensity*.3})`);
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,128,128);
+  return new THREE.CanvasTexture(c);
+}
+
+PATHS.forEach((path,i)=>{
+  const angle=i/PATHS.length*Math.PI*2-Math.PI/2;
+  const x=Math.cos(angle)*HDIST, z=Math.sin(angle)*HDIST+1;
+  const g=new THREE.Group(); g.position.set(x,-0.42,z);
+  const c=new THREE.Color(path.color);
+
+  // Outer rim (dark stone ring)
+  const rim=new THREE.Mesh(new THREE.RingGeometry(HR*.85,HR*1.15,32),
+    new THREE.MeshStandardMaterial({color:0x0a0a15,roughness:1,metalness:0,side:THREE.DoubleSide}));
+  rim.rotation.x=-Math.PI/2; g.add(rim);
+
+  // Inner glow (hole light)
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(HR*.8,32),
+    new THREE.MeshStandardMaterial({color:path.color,emissive:path.color,emissiveIntensity:.5,transparent:true,opacity:.6,side:THREE.DoubleSide}));
+  glow.rotation.x=-Math.PI/2; glow.position.y=.01; g.add(glow);
+
+  // Deeper dark center
+  const center=new THREE.Mesh(new THREE.CircleGeometry(HR*.4,24),
+    new THREE.MeshStandardMaterial({color:0x000005,roughness:1,metalness:0,side:THREE.DoubleSide}));
+  center.rotation.x=-Math.PI/2; center.position.y=.005; g.add(center);
+
+  // Light beam (translucent cone rising from hole)
+  const beamMat=new THREE.MeshStandardMaterial({color:path.color,emissive:path.color,emissiveIntensity:.1,transparent:true,opacity:.12,side:THREE.DoubleSide,depthWrite:false});
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(HR*.2,HR*.7,.6,16,1,true),beamMat);
+  beam.position.y=.3; g.add(beam);
+
+  // Second beam layer (wider, fainter)
+  const beam2Mat=beamMat.clone();beam2Mat.opacity=.06;
+  const beam2=new THREE.Mesh(new THREE.CylinderGeometry(HR*.1,HR*.9,.7,16,1,true),beam2Mat);
+  beam2.position.y=.35; g.add(beam2);
+
+  // Click mesh (flat, nearly invisible)
+  const clickMesh=new THREE.Mesh(new THREE.CircleGeometry(HR*1.2,16),
+    new THREE.MeshStandardMaterial({color:path.color,transparent:true,opacity:.01,side:THREE.DoubleSide}));
+  clickMesh.rotation.x=-Math.PI/2; clickMesh.position.y=.02; g.add(clickMesh);
+
+  // Glow sprite at ground level
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:makeGlowTex(c,.25),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  sprite.scale.set(2,2,1); sprite.position.y=.05;
+  g.add(sprite);
+
+  // Light point
+  const pl=new THREE.PointLight(path.color,.3,3);pl.position.set(0,.1,0);g.add(pl);
+
+  // Label (above hole, floating)
+  const ld=document.createElement('div');ld.className='portal-label';ld.textContent=path.id;ld.style.color='#e8d5b0';ld.style.fontSize='13px';ld.style.fontWeight='bold';
+  ld.style.background='rgba(10,8,15,.7)';ld.style.padding='2px 8px';ld.style.borderRadius='3px';ld.style.border='1px solid rgba(200,160,100,.2)';ld.style.textShadow='0 0 10px rgba(0,0,0,.8)';
+  const label=new CSS2DObject(ld);label.position.set(0,.55,.05);
+  g.add(label);
+  scene.add(g);
+  holes.push({group:g,rim,glow,center,beam,beam2,clickMesh,sprite,pLight:pl,label,data:path,angle,hovered:false,time:Math.random()*100});
+});
+
+// ===== 环境粒子 =====
+const APC=300;const apGeo=new THREE.BufferGeometry();const apPos=new Float32Array(APC*3),apSpd=new Float32Array(APC);
+for(let i=0;i<APC;i++){apPos[i*3]=(Math.random()-.5)*30;apPos[i*3+1]=Math.random()*10;apPos[i*3+2]=(Math.random()-.5)*20-2;apSpd[i]=.2+Math.random()*.5;}
+apGeo.setAttribute('position',new THREE.BufferAttribute(apPos,3));
+const ambientPts=new THREE.Points(apGeo,new THREE.PointsMaterial({color:0x4466aa,size:.025,transparent:true,opacity:.2,blending:THREE.AdditiveBlending,sizeAttenuation:true}));
+scene.add(ambientPts);
+
+// ===== 星空 =====
+const STAR_COUNT=600;const sGeo=new THREE.BufferGeometry();const sPos=new Float32Array(STAR_COUNT*3),sSizes=new Float32Array(STAR_COUNT);
+for(let i=0;i<STAR_COUNT;i++){sPos[i*3]=(Math.random()-.5)*120;sPos[i*3+1]=Math.random()*40+5;sPos[i*3+2]=(Math.random()-.5)*120-40;sSizes[i]=.05+Math.random()*.15;}
+sGeo.setAttribute('position',new THREE.BufferAttribute(sPos,3));
+const stars=new THREE.Points(sGeo,new THREE.PointsMaterial({color:0x8888cc,size:.08,transparent:true,opacity:.5,blending:THREE.AdditiveBlending,sizeAttenuation:true}));
+scene.add(stars);
+
+// ===== 地面雾气 =====
+const MIST_COUNT=200;const mGeo=new THREE.BufferGeometry();const mPos=new Float32Array(MIST_COUNT*3);
+for(let i=0;i<MIST_COUNT;i++){const a=Math.random()*Math.PI*2,r=1.5+Math.random()*5;mPos[i*3]=Math.cos(a)*r;mPos[i*3+1]=-.4+Math.random()*.3;mPos[i*3+2]=Math.sin(a)*r;}
+mGeo.setAttribute('position',new THREE.BufferAttribute(mPos,3));
+const mist=new THREE.Points(mGeo,new THREE.PointsMaterial({color:0x445577,size:.12,transparent:true,opacity:.08,blending:THREE.AdditiveBlending,depthWrite:false}));
+scene.add(mist);
+
+// ===== 浮灯 =====
+const LANTERN_COUNT=8;const lanterns=[];
+for(let i=0;i<LANTERN_COUNT;i++){
+  const lc=document.createElement('canvas');lc.width=32;lc.height=48;
+  const lctx=lc.getContext('2d');lctx.fillStyle=`hsla(${30+i*20},100%,70%,.15)`;
+  lctx.beginPath();lctx.ellipse(16,24,12,20,0,0,Math.PI*2);lctx.fill();
+  const lTex=new THREE.CanvasTexture(lc);
+  const lSprite=new THREE.Sprite(new THREE.SpriteMaterial({map:lTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  const a=Math.random()*Math.PI*2;const r=3+Math.random()*4;
+  lSprite.position.set(Math.cos(a)*r,1+Math.random()*4,Math.sin(a)*r+1);
+  lSprite.scale.set(.5+Math.random()*.5,.7+Math.random()*.7,1);
+  scene.add(lSprite);
+  lanterns.push({sprite:lSprite,angle:a,radius:r,speed:.1+Math.random()*.2,phase:Math.random()*100});
+}
+
+// ===== 等待的灵魂 =====
+const WAITING_COUNT=8;const waitingSouls=[];
+for(let i=0;i<WAITING_COUNT;i++){
+  const hue=i/WAITING_COUNT;const col=new THREE.Color().setHSL(hue,.4,.4);
+  const wMat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:.08,transparent:true,opacity:.12,roughness:.5,metalness:.1});
+  const wg=new THREE.Group();
+  const wh=new THREE.Mesh(new THREE.SphereGeometry(.15,8,8),wMat);
+  wh.position.y=.5;wg.add(wh);
+  const wb=new THREE.Mesh(new THREE.CylinderGeometry(.12,.18,.3,6),wMat);
+  wb.position.y=.25;wg.add(wb);
+  const wr=new THREE.Mesh(new THREE.CylinderGeometry(.22,.35,.35,6),wMat.clone());
+  wr.material.opacity=.06;wr.position.y=.12;wg.add(wr);
+  const a=i/WAITING_COUNT*Math.PI*2+.5;
+  wg.position.set(Math.cos(a)*4.5,.2+Math.random()*.5,Math.sin(a)*3+2);
+  wg.scale.set(.6,.6,.6);
+  scene.add(wg);
+  waitingSouls.push({group:wg,phase:Math.random()*100,angle:a,baseY:wg.position.y});
+}
+
+// ===== 3D 灵魂建模 =====
+let soulGroup = null;
+let soulArms = null;
+let soulDesire = 0;
+let currentSoul = null;
+let soulArrived = false;
+let soulFloatPhase = 0;
+let soulColor = 0x88aaff;
+
+function createHumanoidSoul(color=0x88aaff, variant=0, pathIdx=1) {
+  const g = new THREE.Group();
+  const c = new THREE.Color(color);
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color, emissive: color, emissiveIntensity: .25,
+    transparent: true, opacity: .7, roughness: .3, metalness: .1,
+  });
+
+  // Shape variety
+  const shapes=[
+    {hs:.2,bs:.15,bt:.22,bh:.4,rw:.3,rt:.45,rh:.45,as:.035,al:.25,tw:.18,th:.25,ey:.75,by:.42,ry:.28,ay:.6,ty:.08},
+    {hs:.18,bs:.2,bt:.28,bh:.35,rw:.35,rt:.5,rh:.5,as:.04,al:.22,tw:.22,th:.2,ey:.7,by:.38,ry:.25,ay:.55,ty:.05},
+    {hs:.22,bs:.1,bt:.16,bh:.45,rw:.25,rt:.38,rh:.4,as:.03,al:.28,tw:.14,th:.3,ey:.8,by:.48,ry:.32,ay:.65,ty:.12},
+    {hs:.17,bs:.18,bt:.25,bh:.3,rw:.32,rt:.48,rh:.35,as:.038,al:.2,tw:.2,th:.22,ey:.65,by:.35,ry:.22,ay:.5,ty:.06},
+    {hs:.21,bs:.22,bt:.3,bh:.38,rw:.4,rt:.55,rh:.52,as:.042,al:.2,tw:.26,th:.18,ey:.78,by:.4,ry:.28,ay:.58,ty:.04},
+    {hs:.16,bs:.08,bt:.14,bh:.42,rw:.2,rt:.32,rh:.38,as:.028,al:.3,tw:.12,th:.28,ey:.75,by:.48,ry:.32,ay:.65,ty:.14},
+  ];
+  const s=shapes[variant%shapes.length];
+
+  // Head (slightly elongated for better proportion)
+  const head = new THREE.Mesh(new THREE.SphereGeometry(s.hs, 10, 12), bodyMat);
+  head.scale.y = 1.1;
+  head.position.y = s.ey; g.add(head);
+
+  // Neck
+  const neckMat = bodyMat.clone(); neckMat.opacity = .5;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(s.hs*.25, s.hs*.3, s.hs*.15, 8), neckMat);
+  neck.position.y = s.ey - s.hs*.5; g.add(neck);
+
+  // Body
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(s.bs, s.bt, s.bh, 10), bodyMat);
+  body.position.y = s.by; g.add(body);
+
+  // Shoulders
+  const shMat = bodyMat.clone(); shMat.opacity = .4;
+  const shoulder = new THREE.Mesh(new THREE.CylinderGeometry(s.rw*.8, s.rw, s.hs*.12, 10), shMat);
+  shoulder.position.y = s.by + s.bh*.35; g.add(shoulder);
+
+  // Robe (scalloped bottom effect using cone)
+  const robeMat = bodyMat.clone();
+  robeMat.opacity = .25; robeMat.emissiveIntensity = .12;
+  const robe = new THREE.Mesh(new THREE.CylinderGeometry(s.rw, s.rt*1.3, s.rh, 12), robeMat);
+  robe.position.y = s.ry; g.add(robe);
+
+  // Robe overlay (wispy bottom)
+  const robe2Mat = robeMat.clone(); robe2Mat.opacity = .1;
+  const robe2 = new THREE.Mesh(new THREE.CylinderGeometry(s.rw*.7, s.rt*1.6, s.rh*.7, 10), robe2Mat);
+  robe2.position.y = s.ry - s.rh*.15; g.add(robe2);
+
+  // Arms
+  const armMat = bodyMat.clone(); armMat.opacity = .45;
+  const arms = [];
+  const armSpread = s.rw * 0.9;
+  [[-armSpread,s.ay,.3],[armSpread,s.ay,-.3]].forEach(([x, y, rz])=>{
+    const a = new THREE.Mesh(new THREE.CylinderGeometry(s.as, s.as*.7, s.al, 6), armMat);
+    a.position.set(x, y, 0); a.rotation.z = rz;
+    g.add(a); arms.push(a);
+  });
+
+  // Ghostly tail (wisp)
+  const tailMat = bodyMat.clone(); tailMat.opacity = .12;
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(s.tw, s.th, 8), tailMat);
+  tail.position.y = s.ty; tail.rotation.x = .1; g.add(tail);
+
+  // Eyes (glowing with sclera)
+  const eyeMat = new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xffffff, emissiveIntensity:.2});
+  const pupilMat = new THREE.MeshStandardMaterial({color:0x111111});
+  const eyeOff=s.hs*.28;
+  const eyes = [];
+  [[-eyeOff,s.ey+.02,s.hs*.88],[eyeOff,s.ey+.02,s.hs*.88]].forEach(([x,y,z])=>{
+    const e = new THREE.Mesh(new THREE.SphereGeometry(s.hs*.13, 8, 8), eyeMat);
+    e.position.set(x,y,z); g.add(e); eyes.push(e);
+    const p = new THREE.Mesh(new THREE.SphereGeometry(s.hs*.07, 8, 8), pupilMat);
+    p.position.set(x,y,z+s.hs*.08); g.add(p);
+  });
+
+  // Eyebrows
+  const browMat = bodyMat.clone(); browMat.opacity = .6; browMat.emissiveIntensity = .1;
+  [[-eyeOff*.7,s.ey+s.hs*.25,s.hs*.88],[eyeOff*.7,s.ey+s.hs*.25,s.hs*.88]].forEach(([x,y,z])=>{
+    const b = new THREE.Mesh(new THREE.BoxGeometry(s.hs*.12, s.hs*.03, s.hs*.04), browMat);
+    b.position.set(x,y,z); b.rotation.z = x<0?-.1:.1; g.add(b);
+  });
+
+  // Mouth (curved shape - more expressive)
+  const mouthMat = new THREE.MeshStandardMaterial({color:0x446688, emissive:0x446688, emissiveIntensity:.08});
+  const mouth = new THREE.Mesh(new THREE.TorusGeometry(s.hs*.1, s.hs*.025, 6, 10), mouthMat);
+  mouth.position.set(0, s.ey-s.hs*.2, s.hs*.9); mouth.rotation.x = .4; mouth.scale.y = .6;
+  g.add(mouth);
+
+  // Cheek blush
+  const blushMat = new THREE.MeshStandardMaterial({color:c.clone().lerp(new THREE.Color(0xff8888),.3), transparent:true, opacity:.08});
+  [[-s.hs*.5, s.ey-s.hs*.1, s.hs*.6],[s.hs*.5, s.ey-s.hs*.1, s.hs*.6]].forEach(([x,y,z])=>{
+    const bl = new THREE.Mesh(new THREE.SphereGeometry(s.hs*.15, 6, 6), blushMat);
+    bl.position.set(x,y,z); g.add(bl);
+  });
+
+  // === Soul-specific features based on path ===
+  const pathFeatures = [];
+
+  if (pathIdx === 0) { // 成仙 - golden halo
+    const haloMat = new THREE.MeshStandardMaterial({color:0xffd700, emissive:0xffd700, emissiveIntensity:.15, transparent:true, opacity:.2, side:THREE.DoubleSide});
+    const halo = new THREE.Mesh(new THREE.RingGeometry(s.hs*.6, s.hs*.8, 16), haloMat);
+    halo.position.set(0, s.ey+s.hs*.4, -s.hs*.2); halo.rotation.x = Math.PI/2;
+    g.add(halo); pathFeatures.push(halo);
+  } else if (pathIdx === 2) { // 好战 - spiked shoulder
+    const spikeMat = new THREE.MeshStandardMaterial({color:0xff7043, emissive:0xff7043, emissiveIntensity:.1});
+    [-1,1].forEach(dir => {
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(s.hs*.08, s.hs*.2, 6), spikeMat);
+      spike.position.set(dir*s.rw*.85, s.ay+.08, 0); spike.rotation.z = dir*.3;
+      g.add(spike); pathFeatures.push(spike);
+    });
+  } else if (pathIdx === 3) { // 畜牲 - pointed ears
+    const earMat = bodyMat.clone(); earMat.opacity = .5;
+    [-1,1].forEach(dir => {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(s.hs*.08, s.hs*.15, 6), earMat);
+      ear.position.set(dir*s.hs*.5, s.ey+s.hs*.25, 0);
+      ear.rotation.z = dir*.4; ear.rotation.x = .2;
+      g.add(ear); pathFeatures.push(ear);
+    });
+  } else if (pathIdx === 4) { // 饿鬼 - longer thinner arms
+    arms.forEach(a => { a.scale.set(1, 1.4, 1); a.position.y += .02; });
+  } else if (pathIdx === 5) { // 地狱 - small horns
+    const hornMat = new THREE.MeshStandardMaterial({color:0x440000, emissive:0x880000, emissiveIntensity:.05});
+    [-1,1].forEach(dir => {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(s.hs*.06, s.hs*.2, 6), hornMat);
+      horn.position.set(dir*s.hs*.3, s.ey+s.hs*.3, -s.hs*.05);
+      horn.rotation.x = dir*.3; g.add(horn); pathFeatures.push(horn);
+    });
+  }
+
+  // Aura particles (tiny orbiting dots)
+  const auraCount = 20;
+  const auraGeo = new THREE.BufferGeometry();
+  const auraPos = new Float32Array(auraCount * 3);
+  const auraData = [];
+  for (let i=0; i<auraCount; i++) {
+    const angle = Math.random() * Math.PI*2;
+    const radius = .3 + Math.random() * .4;
+    const height = (Math.random()-.5) * .8;
+    auraPos[i*3] = Math.cos(angle) * radius;
+    auraPos[i*3+1] = .4 + height;
+    auraPos[i*3+2] = Math.sin(angle) * radius;
+    auraData.push({angle, radius, height, speed:.5+Math.random()*1, phase:Math.random()*10});
+  }
+  auraGeo.setAttribute('position', new THREE.BufferAttribute(auraPos, 3));
+  const auraMat = new THREE.PointsMaterial({color:color, size:.015, transparent:true, opacity:.3, blending:THREE.AdditiveBlending});
+  const auraPts = new THREE.Points(auraGeo, auraMat);
+  g.add(auraPts);
+
+  // Tailor scale
+  const sizeScale=.85+Math.random()*.3;
+  g.scale.set(sizeScale, sizeScale, sizeScale);
+
+  // Outer glow (larger)
+  const tex = makeGlowTex(c, .1);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false}));
+  sprite.scale.set(2.5, 2.5, 1); sprite.position.y = s.ey*.5;
+  g.add(sprite);
+
+  // CSS2D speech bubble
+  const bubbleDiv=document.createElement('div');
+  bubbleDiv.className='soul-bubble';
+  bubbleDiv.innerHTML='<div class="sb-text"></div><div class="sb-speaker"></div>';
+  bubbleDiv.style.display='none';
+  const bubbleObj=new CSS2DObject(bubbleDiv);
+  bubbleObj.position.set(0,s.ey+1.2,0);
+  g.add(bubbleObj);
+
+  g.userData = { head, body, robe, robe2, neck, shoulder, arms, tail, mouth, sprite, eyes, bubbleDiv, bubbleObj, auraPts, auraData, pathFeatures };
+  soulArms = arms;
+  return g;
+}
+
+function spawnSoul(data) {
+  if (soulGroup) { scene.remove(soulGroup); soulGroup = null; }
+  const hue = [0.55, 0.3, 0.05, 0.08, 0.75, 0.0][data.correctPath] || 0.55;
+  soulColor = new THREE.Color().setHSL(hue, 0.6, 0.5).getHex();
+  const variant=Math.floor(Math.random()*12);
+  soulGroup = createHumanoidSoul(soulColor, variant, data.correctPath);
+  soulGroup.position.set(0, -2, 0);
+  soulGroup.scale.set(.3, .3, .3);
+  scene.add(soulGroup);
+  currentSoul = data;
+  soulDesire = Math.random()<.7 ? data.correctPath : (data.correctPath+2+Math.floor(Math.random()*4))%6;
+  soulArrived = false;
+  soulFloatPhase = 0;
+  judgingMode = false;
+  askedQuestions = [];
+  autoTimer = 0;
+  autoIdx = 0;
+  skillEffects = [];
+}
+
+// ===== 技能特效 =====
+let skillEffects = [];
+let activeSkill = 0;
+let skillUses = [3, 2, 1];
+
+function useSkillOnSoul(soulData) {
+  if (!soulGroup || !soulArrived || judgingMode) return;
+  if (skillUses[activeSkill] <= 0) return;
+  skillUses[activeSkill]--;
+  updateSkillUI();
+
+  const sData = SKILLS[activeSkill];
+  const line = soulData.skill_reveal ? soulData.skill_reveal[activeSkill] : '哎哟！';
+  showBubble(`"${line}"`, `被${sData.id}击中`);
+
+  // Visual effect
+  if (activeSkill === 0) { // 糯米 - white burst
+    for (let i=0; i<12; i++) {
+      const p = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 6),
+        new THREE.MeshStandardMaterial({color:0xffeedd, emissive:0xffeedd, emissiveIntensity:.3}));
+      p.position.copy(soulGroup.position);
+      p.position.y += .4;
+      p.userData = { vx:(Math.random()-.5)*.1, vy:Math.random()*.05, vz:(Math.random()-.5)*.1, life:1 };
+      scene.add(p);
+      skillEffects.push(p);
+    }
+  } else if (activeSkill === 1) { // 玉佩 - green glow
+    const pulse = new THREE.Mesh(new THREE.SphereGeometry(.4, 12, 12),
+      new THREE.MeshStandardMaterial({color:0x66dd88, emissive:0x66dd88, emissiveIntensity:.5, transparent:true, opacity:.3}));
+    pulse.position.copy(soulGroup.position);
+    pulse.position.y += .4;
+    pulse.userData = { life:1, isPulse:true };
+    scene.add(pulse);
+    skillEffects.push(pulse);
+  } else if (activeSkill === 2) { // 桃木剑 - red slash
+    const slash = new THREE.Mesh(new THREE.BoxGeometry(.3, .01, .01),
+      new THREE.MeshStandardMaterial({color:0xff4444, emissive:0xff4444, emissiveIntensity:.8, transparent:true, opacity:1}));
+    slash.position.copy(soulGroup.position);
+    slash.position.y += .4;
+    slash.position.x += .2;
+    slash.rotation.z = .5;
+    slash.userData = { life:1, isSlash:true };
+    scene.add(slash);
+    skillEffects.push(slash);
+    // Shake soul
+    if (soulGroup) soulGroup.position.x += .05;
+    setTimeout(() => { if (soulGroup) soulGroup.position.x = 0; }, 200);
+  }
+
+  speak(line, soulData.voicePitch, soulData.voiceRate);
+  skillUsedCount++; soulSkillUseCount++;
+  autoTimer = 0;
+}
+
+function updateSkillEffects() {
+  for (let i=skillEffects.length-1; i>=0; i--) {
+    const e = skillEffects[i];
+    e.userData.life -= .02;
+    if (e.userData.isPulse) {
+      e.scale.setScalar(1 + (1-e.userData.life)*2);
+      e.material.opacity = e.userData.life * .3;
+    } else if (e.userData.isSlash) {
+      e.position.x += .02;
+      e.material.opacity = e.userData.life;
+    } else {
+      e.position.x += e.userData.vx;
+      e.position.y += e.userData.vy;
+      e.position.z += e.userData.vz;
+      e.userData.vy -= .002;
+      e.scale.setScalar(e.userData.life);
+    }
+    if (e.userData.life <= 0) {
+      scene.remove(e);
+      skillEffects.splice(i, 1);
+    }
+  }
+}
+
+// ===== 成长系统 =====
+const SAVE_KEY = 'babei_progress';
+const TITLES = [
+  { name:'实习判官', need:0, unlocks:[] },
+  { name:'牛头马面', need:3, unlocks:[] },
+  { name:'判官', need:10, unlocks:['fire_eyes'] },
+  { name:'轮回司主', need:25, unlocks:['life_book'] },
+  { name:'十殿阎罗', need:50, unlocks:['reincarnation_mirror'] },
+];
+const SPECIAL_SKILLS = {
+  fire_eyes:{ name:'火眼金睛', key:'Q', desc:'看穿灵魂的心愿与应得', cost:0 },
+  life_book:{ name:'生死簿', key:'F', desc:'查看灵魂今生功过', cost:25 },
+  reincarnation_mirror:{ name:'轮回镜', key:'R', desc:'预视灵魂转世', cost:50 },
+};
+function loadProgress() {
+  try{return JSON.parse(localStorage.getItem(SAVE_KEY))||{wishes:0,total冥币:0,balance:0,unlocked:[]}}
+  catch(e){return{wishes:0,total冥币:0,balance:0,unlocked:[]}}
+}
+function saveProgress(p) {
+  localStorage.setItem(SAVE_KEY,JSON.stringify(p));
+}
+function getTitle(p) {
+  let t=TITLES[0];
+  for(const ti of TITLES) if(p.wishes>=ti.need)t=ti;
+  return t;
+}
+let PROGRESS = loadProgress();
+
+function updateTitleDisplay() {
+  const t=getTitle(PROGRESS);
+  const el=document.getElementById('title-display');
+  if(el) el.textContent=`${t.name} ｜ 累计成全 ${PROGRESS.wishes} 人`;
+}
+
+// ===== 对话系统 =====
+const Q_BTNS = [
+  { key:'death', label:'怎么没的' },
+  { key:'good', label:'有啥好事' },
+  { key:'bad', label:'干过啥' },
+  { key:'self', label:'自我评价' },
+  { key:'last', label:'遗言' },
+  { key:'worry', label:'遗愿' },
+];
+
+function getLine(soul, key, v=0) {
+  const l = soul.lines[key]; if (!l) return '...';
+  if (Array.isArray(l)) return l[v % l.length];
+  return String(l);
+}
+
+let askedQuestions = [];
+let currentSoulData = null;
+let isAnimating = false;
+let isPlaying = false;
+let judgingMode = false;
+let soulNumber = 0;
+let totalScore = 0;
+let happyCount = 0;
+let skillUsedCount = 0;
+let relationship = null;
+let harshCount = 0;
+let enemyCount = 0;
+let friendCount = 0;
+let soulSkillUseCount = 0;
+let autoTimer = 0;
+let autoIdx = 0;
+let allSoulsQueue = [];
+let soulIndex = 0;
+
+function useDivinePower(soul) {
+  const cost = 15;
+  if (PROGRESS.balance < cost || !soul.concern || soul.concernDone) return;
+  PROGRESS.balance -= cost;
+  PROGRESS.wishes += 1;
+  soul.concernDone = true;
+  const title=getTitle(PROGRESS);
+  const newUnlocks=title.unlocks.filter(u=>!PROGRESS.unlocked.includes(u));
+  newUnlocks.forEach(u=>{PROGRESS.unlocked.push(u);});
+  saveProgress(PROGRESS);
+  const result = soul.concernResult || '已用神力为你完成了心愿';
+  showBubble(`"${result}"`, `🔮 神力显灵 · ${soul.name}`);
+  speak(result, soul.voicePitch, soul.voiceRate);
+  updateUI();
+  renderQButtons(soul, askedQuestions);
+  autoTimer = 0;
+}
+
+function showBubble(text, speaker='', hint='') {
+  if (soulGroup && soulGroup.userData && soulGroup.userData.bubbleDiv) {
+    const bd=soulGroup.userData.bubbleDiv;
+    bd.querySelector('.sb-text').textContent=text;
+    bd.querySelector('.sb-speaker').textContent=speaker;
+    bd.style.display='block';
+  }
+}
+function hideBubble() {
+  if (soulGroup && soulGroup.userData && soulGroup.userData.bubbleDiv) {
+    soulGroup.userData.bubbleDiv.style.display='none';
+  }
+}
+function showPanel() { document.getElementById('panel').classList.add('show'); }
+function hidePanel() { document.getElementById('panel').classList.remove('show'); }
+
+function updateSoulInfo(soul) {
+  document.getElementById('soul-name').textContent = soul.name;
+  document.getElementById('soul-age').textContent = `· ${soul.age}岁`;
+  document.getElementById('soul-title').textContent = `· ${soul.title}`;
+}
+
+function renderQButtons(soul, asked) {
+  const cont = document.getElementById('question-btns');
+  const avail = Q_BTNS.filter(q => !asked.includes(q.key));
+  let html = '';
+  avail.forEach(q => { html += `<button data-key="${q.key}">${q.label}</button>`; });
+  if (relationship === 'friend') html += `<button class="harsh" id="harsh-btn">😤 老朋友也得骂</button>`;
+  if (relationship === 'enemy') html += `<button class="harsh" id="harsh-btn">👊 开怼！</button>`;
+  if (soul.concern && PROGRESS.balance>=15 && !soul.concernDone && asked.includes('worry')) html += `<button id="divine-btn">🔮 运用神力</button>`;
+  if (asked.length >= 2) html += `<button class="judge" id="judge-btn">⚖️ 送走</button>`;
+  html += `<button class="voice-btn ${speechEnabled?'active':''}" id="voice-btn">🔊</button>`;
+  cont.innerHTML = html;
+  cont.querySelectorAll('button[data-key]').forEach(b => b.addEventListener('click',()=>askQuestion(soul,b.dataset.key)));
+  const hb = document.getElementById('harsh-btn');
+  if (hb) hb.addEventListener('click',()=>harshInteract(soul));
+  const db = document.getElementById('divine-btn');
+  if (db) db.addEventListener('click',()=>useDivinePower(soul));
+  const jb = document.getElementById('judge-btn');
+  if (jb) jb.addEventListener('click',()=>startJudging(soul));
+  const vb = document.getElementById('voice-btn');
+  if (vb) vb.addEventListener('click',()=>{speechEnabled=!speechEnabled;vb.classList.toggle('active');});
+}
+
+function soulEnter(soul) {
+  updateSoulInfo(soul);
+  showPanel();
+  relationship = soul.friend ? 'friend' : soul.enemy ? 'enemy' : soul.meangirl ? 'meangirl' : null;
+  if (soul.friend) friendCount++;
+  if (soul.enemy) enemyCount++;
+  let prefix = '';
+  if (soul.friend) prefix = '😏 老熟人啊！';
+  if (soul.enemy) prefix = '😈 哟，你也落我手里了？';
+  if (soul.meangirl) {
+    const other = soul.name === '小蝶' ? '小美' : '小蝶';
+    prefix = `💅 姐妹驾到！${other}来没来？`;
+  }
+  const line = getLine(soul, 'enter');
+  showBubble(`"${line}"`, `${prefix} ${soul.name} · ${soul.title}`);
+  speak(line, soul.voicePitch, soul.voiceRate);
+  askedQuestions = [];
+  renderQButtons(soul, []);
+}
+
+function harshInteract(soul) {
+  harshCount++;
+  let line, label;
+  if (soul.friend) {
+    const r = Math.floor(Math.random()*3);
+    line = ['你丫又给老子添麻烦！说吧这回又咋了？','行啊你小子，死了都不消停。赶紧说，别浪费时间。','老朋友归老朋友，进了我这就得照规矩来！坦白从宽！'][r];
+    label = '你怼老朋友';
+  } else if (soul.enemy) {
+    const r = Math.floor(Math.random()*3);
+    line = ['呵呵，没想到吧？风水轮流转！老实交代！','你也有今天！说！你那些破事我一清二楚！','别想糊弄我，你什么德行我不知道？从实招来！'][r];
+    label = '你开怼仇人';
+  } else return;
+  showBubble(`"${line}"`, label);
+  speak(line, soul.voicePitch*0.9, soul.voiceRate*1.1);
+  askAQuestion(soul);
+  autoTimer = 0;
+}
+
+function askAQuestion(soul) {
+  const unasked = Q_BTNS.filter(q => !askedQuestions.includes(q.key));
+  if (unasked.length === 0) return;
+  const pick = unasked[Math.floor(Math.random() * unasked.length)];
+  askQuestion(soul, pick.key);
+}
+
+function askQuestion(soul, key) {
+  let line = getLine(soul, key);
+  if (key === 'self') {
+    const want = PATHS[soulDesire].id;
+    const deserve = PATHS[soul.correctPath].id;
+    if (soulDesire === soul.correctPath) {
+      line = `我知道我该去「${want}」，我心里是认的。`;
+    } else {
+      line = `我知道按规矩我该去「${deserve}」…但我心里想去「${want}」，大人您能成全我吗？`;
+    }
+  }
+  if (key === 'worry') {
+    const pref = ['唉…要说放心不下的，也就一件事：','其实我死了倒没什么，就是…','别的都还好，就是有件事一直惦记着：','说到遗愿，我就放心不下这个：','我一直憋着没说——'][Math.floor(Math.random()*5)];
+    line = soul.concern ? `${pref}${soul.concern}` : '也没什么遗愿了…';
+  }
+  const labels = {'death':'怎么没的','good':'好事','bad':'干过啥','self':'自评','last':'遗言','worry':'遗愿'};
+  showBubble(`"${line}"`, `${soul.name}的回答`);
+  speak(line, soul.voicePitch, soul.voiceRate);
+  if (!askedQuestions.includes(key)) askedQuestions.push(key);
+  renderQButtons(soul, askedQuestions);
+  autoTimer = 0;
+}
+
+let fireEyesActive = false;
+function toggleFireEyes(soul) {
+  fireEyesActive = !fireEyesActive;
+  const el=document.getElementById('fire-eyes-overlay');
+  if (!fireEyesActive) { el.classList.remove('show'); return; }
+  const desire=PATHS[soulDesire].id;
+  const deserved=PATHS[soul.correctPath].id;
+  document.getElementById('fe-desire').textContent=`心愿：${desire}`;
+  document.getElementById('fe-deserved').textContent=`应得：${deserved}`;
+  document.getElementById('fe-hint').textContent = desire===deserved ? '心愿与应得一致' : '心愿与应得不符，可用冥币成全';
+  el.classList.add('show');
+}
+function fulfillWish(soul,cost) {
+  if (PROGRESS.balance<cost) return;
+  PROGRESS.balance-=cost;
+  const title=getTitle(PROGRESS);
+  const newUnlocks=title.unlocks.filter(u=>!PROGRESS.unlocked.includes(u));
+  newUnlocks.forEach(u=>{PROGRESS.unlocked.push(u);});
+  saveProgress(PROGRESS);
+  const fb=document.getElementById('feedback'); const main=document.getElementById('fb-main'); const sub=document.getElementById('fb-sub');
+  main.textContent=`${soul.name} 心愿达成 ✨`;
+  main.className='main tip';
+  sub.textContent=`花费 ${cost} 冥币`;
+  fb.classList.add('show');
+  spawnCoin(cost);
+  setTimeout(()=>{fb.classList.remove('show');},1500);
+  // Auto-send to desire path
+  fireEyesActive=false; document.getElementById('fire-eyes-overlay').classList.remove('show');
+  updateUI();
+  processJudgment(soul, soulDesire);
+}
+
+function startJudging(soul) {
+  if (judgingMode) return;
+  judgingMode = true;
+  showBubble(`"${getLine(soul,'last')}"`, `${soul.name}的最后遗言`);
+  const cont = document.getElementById('question-btns');
+  cont.innerHTML = '';
+  // 火眼金睛 button if unlocked
+  const title=getTitle(PROGRESS);
+  if (title.unlocks.includes('fire_eyes')) {
+    const fBtn=document.createElement('button');
+    fBtn.textContent='🔥 火眼金睛';
+    fBtn.style.cssText='border-color:#ff6!important;color:#ff6!important';
+    fBtn.onclick=()=>toggleFireEyes(soul);
+    cont.appendChild(fBtn);
+  }
+  // 用冥币成全 button if soul has unmet desire
+  const desire=PATHS[soulDesire].id;
+  const deserved=PATHS[soul.correctPath].id;
+  if (desire!==deserved && PROGRESS.balance>0) {
+    const fBtn=document.createElement('button');
+    fBtn.id='fulfill-btn';
+    fBtn.textContent=`💰 用冥币成全（${desire}）`;
+    const cost = soulSkillUseCount>0 ? 10 : 20;
+    fBtn.onclick=()=>fulfillWish(soul,cost);
+    cont.appendChild(fBtn);
+  }
+  document.getElementById('skill-hint').classList.remove('show');
+  if (soulGroup && soulGroup.userData && soulGroup.userData.mouth) {
+    soulGroup.userData.mouth.rotation.x = .5;
+  }
+}
+
+// ===== 语音 =====
+let speechEnabled = true;
+function speak(text, pitch=1, rate=1) {
+  if (!speechEnabled || !text || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN'; u.pitch = pitch; u.rate = rate;
+  const voices = speechSynthesis.getVoices();
+  const zh = voices.find(v => v.lang.includes('zh'));
+  if (zh) u.voice = zh;
+  speechSynthesis.speak(u);
+}
+if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices(); }
+
+// ===== 冥币飞升 =====
+function spawnCoin(amount) {
+  const el = document.createElement('div');
+  el.className = 'coin-fly';
+  el.textContent = `💰 +${amount}`;
+  el.style.left = '50%';
+  el.style.top = '45%';
+  el.style.transform = 'translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+// ===== 判定 =====
+function judgeSoul(soul, pathIdx) {
+  const selected = PATHS[pathIdx].id;
+  const desire = PATHS[soulDesire].id;
+  const deserved = PATHS[soul.correctPath].id;
+  const honored = selected === desire;
+  const just = selected === deserved;
+
+  let satisfaction = 40;
+  if (askedQuestions.length >= 3) satisfaction += 20;
+  if (askedQuestions.length >= 5) satisfaction += 10;
+  if (honored) satisfaction += 35;
+  else if (just) satisfaction += 15;
+  if (soulSkillUseCount > 0) satisfaction += 15;
+  if (harshCount > 0 && relationship) satisfaction -= harshCount * 8;
+  satisfaction -= autoTriggers * 10;
+
+  const happy = satisfaction >= 60;
+  const tip = happy ? Math.floor(10 + (satisfaction-60)/5) : 0;
+
+  totalScore += tip;
+  if (happy) happyCount++;
+  // Handle persistent progression
+  if (honored) PROGRESS.wishes+=1;
+  if (tip>0) {
+    PROGRESS.total冥币+=tip; PROGRESS.balance+=tip;
+  }
+  if (honored || tip>0) {
+    const title=getTitle(PROGRESS);
+    const newUnlocks=title.unlocks.filter(u=>!PROGRESS.unlocked.includes(u));
+    newUnlocks.forEach(u=>{PROGRESS.unlocked.push(u);});
+    if (honored && newUnlocks.length>0) {
+      setTimeout(()=>{
+        const sub=document.getElementById('fb-sub');
+        sub.textContent+=` · 🔥 解锁 ${newUnlocks.map(u=>SPECIAL_SKILLS[u].name).join('、')}！`;
+      }, 400);
+    }
+    saveProgress(PROGRESS);
+  }
+
+  return { honored, just, happy, tip, satisfaction, desire:desire, deserved };
+}
+
+let autoTriggers = 0;
+
+function processJudgment(soul, pathIdx) {
+  const result = judgeSoul(soul, pathIdx);
+  const fb = document.getElementById('feedback');
+  const main = document.getElementById('fb-main');
+  const sub = document.getElementById('fb-sub');
+
+  if (result.happy) {
+    main.textContent = `${soul.name} 满意了 🙏`;
+    main.className = 'main happy';
+    sub.textContent = result.tip > 0 ? `打赏冥币 +${result.tip}` : '默默点头致谢';
+    fb.classList.add('show');
+    if (result.tip > 0) setTimeout(()=>spawnCoin(result.tip), 300);
+  } else {
+    main.textContent = `${soul.name} 不太满意 😞`;
+    main.className = 'main sad';
+    sub.textContent = `它想去「${result.desire}」`;
+    fb.classList.add('show');
+  }
+
+  showBubble(`"${result.happy ? '谢大人！大人英明！' : result.honored ? '好吧…虽然不是最想去的地方，但您说了算。' : '呜…我想去的是「'+result.desire+'」啊…'}"`, soul.name);
+  updateUI();
+  hidePanel();
+
+  // Hole effect + soul descend
+  const idx = pathIdx;
+  const h = holes[idx];
+  h.glow.material.emissiveIntensity=1.5; h.beam.material.opacity=.4; h.beam2.material.opacity=.2;
+  setTimeout(()=>{h.glow.material.emissiveIntensity=.5;h.beam.material.opacity=.12;h.beam2.material.opacity=.06;},600);
+  h.pLight.intensity=1.5; setTimeout(()=>{h.pLight.intensity=.3;},600);
+
+  // Animate soul descending into hole
+  if (soulGroup) {
+    const startY=soulGroup.position.y;
+    const targetY=-0.3;
+    const holePos=h.group.position.clone();
+    const startPos=soulGroup.position.clone();
+    const duration=800;
+    const startTime=performance.now();
+    function descendAnim() {
+      const elapsed=performance.now()-startTime;
+      const t=Math.min(elapsed/duration,1);
+      const ease=1-Math.pow(1-t,3);
+      soulGroup.position.x=startPos.x+(holePos.x-startPos.x)*ease;
+      soulGroup.position.z=startPos.z+(holePos.z-startPos.z)*ease;
+      soulGroup.position.y=startY+(targetY-startY)*ease;
+      const s=1-ease*.8;
+      soulGroup.scale.set(s,s,s);
+      if (soulGroup.userData.sprite) soulGroup.userData.sprite.material.opacity=1-ease;
+      if (t<1) requestAnimationFrame(descendAnim);
+      else {
+        scene.remove(soulGroup); soulGroup=null;
+        currentSoulData=null;soulArrived=false;isAnimating=false;judgingMode=false;
+        hideBubble();
+        fb.classList.remove('show');
+        document.getElementById('skill-hint').classList.add('show');
+      nextSoul();
+      }
+    }
+    descendAnim();
+  } else {
+    setTimeout(()=>{
+      fb.classList.remove('show');
+      currentSoulData=null;soulArrived=false;isAnimating=false;judgingMode=false;
+      hideBubble();
+      document.getElementById('skill-hint').classList.add('show');
+      nextSoul();
+    }, 1200);
+  }
+}
+
+// ===== 游戏流程 =====
+function nextSoul() {
+  if (!isPlaying) return;
+  soulNumber++;
+  if (soulNumber > 5) {
+    endGame();
+    return;
+  }
+  document.getElementById('soul-num').textContent = soulNumber;
+  // Never repeat until all souls seen
+  if (soulIndex >= allSoulsQueue.length) {
+    allSoulsQueue = [...SOULS].sort(()=>Math.random()-.5);
+    soulIndex = 0;
+  }
+  const soul = allSoulsQueue[soulIndex];
+  soulIndex++;
+  autoTriggers = 0; soulSkillUseCount = 0; soul.concernDone = false;
+  skillUses = [3, 2, 1];
+  updateSkillUI();
+  spawnSoul(soul);
+  setTimeout(() => {
+    // soul arrival triggers in animation loop
+  }, 100);
+}
+
+function startGame() {
+  totalScore=0; happyCount=0; skillUsedCount=0; soulNumber=0;
+  harshCount=0; friendCount=0; enemyCount=0; relationship=null; fireEyesActive=false;
+  document.getElementById('fire-eyes-overlay').classList.remove('show');
+  PROGRESS=loadProgress(); updateTitleDisplay();
+  isPlaying=true; isAnimating=false; soulArrived=false; judgingMode=false;
+  currentSoulData=null; activeSkill=0;
+  skillUses=[3,2,1];
+  if (soulGroup) { scene.remove(soulGroup); soulGroup = null; }
+  allSoulsQueue = [...SOULS].sort(()=>Math.random()-.5); soulIndex = 0;
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.remove('visible');
+  document.getElementById('score-val').textContent = '0';
+  document.getElementById('soul-num').textContent = '0';
+  document.getElementById('skill-hint').classList.add('show');
+  //
+  updateUI(); updateSkillUI();
+  setTimeout(()=>nextSoul(), 800);
+}
+
+function endGame() {
+  isPlaying = false;
+  if (soulGroup) { scene.remove(soulGroup); soulGroup = null; }
+  hideBubble(); hidePanel();
+  document.getElementById('skill-hint').classList.remove('show');
+
+  document.getElementById('final-score').textContent = totalScore;
+  document.getElementById('final-happy').textContent = `${happyCount}/5`;
+  document.getElementById('final-skills').textContent = skillUsedCount;
+
+  let rank = '实习判官';
+  if (totalScore>=80) rank='初级判官'; if (totalScore>=150) rank='资深判官';
+  if (totalScore>=250) rank='轮回司主'; if (totalScore>=400) rank='十殿阎罗';
+  document.getElementById('final-rank').textContent = `称号：${rank}`;
+
+  const reviews = [];
+  if (happyCount >= 4) reviews.push('亡灵们对你赞不绝口');
+  else if (happyCount >= 2) reviews.push('大部分亡灵还算满意');
+  else reviews.push('亡灵们颇有微词');
+  if (harshCount > 0) {
+    if (harshCount > 3) reviews.push('刻薄起来不是人');
+    else reviews.push('嘴上不饶人');
+  }
+  if (friendCount > 0 && enemyCount > 0) reviews.push('熟人一个没放过');
+  if (skillUsedCount >= 5) reviews.push('法器用得炉火纯青');
+  else if (skillUsedCount >= 2) reviews.push('法器偶尔用用也不错');
+  else reviews.push('下次试试用法器吧');
+  const personality = harshCount > 0 ? '刻薄但公正的判官' : '温和但坚定的判官';
+  reviews.push(`你是个${personality}`);
+  document.getElementById('final-review').textContent = reviews.join(' · ');
+  const title=getTitle(PROGRESS);
+  document.getElementById('final-progress').textContent = `称号：${title.name} ｜ 累计成全 ${PROGRESS.wishes} 人 ｜ 冥币余额 ${PROGRESS.balance}`;
+  updateTitleDisplay();
+
+  document.getElementById('end-screen').classList.add('visible');
+}
+
+// ===== 技能 UI =====
+function updateSkillUI() {
+  for (let i=0; i<3; i++) {
+    const el = document.querySelector(`.skill-item[data-skill="${i}"]`);
+    if (!el) continue;
+    el.classList.toggle('active', i === activeSkill);
+    el.classList.toggle('used', skillUses[i] <= 0);
+    el.querySelector('.count').textContent = `×${skillUses[i]}`;
+  }
+}
+
+// ===== 键盘事件 =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'e' || e.key === 'E') {
+    if (!isPlaying || judgingMode) return;
+    // Cycle to next available skill
+    for (let i=0; i<3; i++) {
+      const next = (activeSkill + 1 + i) % 3;
+      if (skillUses[next] > 0) { activeSkill = next; break; }
+    }
+    updateSkillUI();
+    document.getElementById('skill-hint').textContent = `${SKILLS[activeSkill].icon} ${SKILLS[activeSkill].id} · ${SKILLS[activeSkill].desc}`;
+    setTimeout(() => {
+      if (!judgingMode) document.getElementById('skill-hint').textContent = '点击灵魂使用法器 · 按 E 切换';
+    }, 2000);
+  }
+});
+
+// ===== 点击灵魂使用技能 =====
+renderer.domElement.addEventListener('click', (e) => {
+  // Check if clicking on soul for skill use
+  if (!isPlaying || judgingMode || !soulGroup || !soulArrived || !currentSoulData) return;
+  if (skillUses[activeSkill] <= 0) return;
+
+  raycaster.setFromCamera(mouse, camera);
+  const soulMeshes = [];
+  soulGroup.children.forEach(c => {
+    if (c.isMesh || c.type === 'Mesh') soulMeshes.push(c);
+  });
+  const hits = raycaster.intersectObjects(soulMeshes, false);
+  if (hits.length > 0) {
+    useSkillOnSoul(currentSoulData);
+  }
+});
+
+// ===== Hole click =====
+renderer.domElement.addEventListener('click', (e) => {
+  if (!isPlaying || isAnimating || !soulArrived || !currentSoulData || !judgingMode) return;
+  const intersects = getHoleIntersects();
+  if (!intersects.length) return;
+  const hit = intersects[0].object;
+  const idx = holes.findIndex(p => p.clickMesh === hit);
+  if (idx === -1) return;
+
+  isAnimating = true;
+  processJudgment(currentSoulData, idx);
+});
+
+// ===== Raycaster =====
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+});
+
+function getHoleIntersects() {
+  raycaster.setFromCamera(mouse, camera);
+  return raycaster.intersectObjects(holes.map(p => p.clickMesh));
+}
+
+// ===== UI 更新 =====
+function updateUI() {
+  document.getElementById('score-val').textContent = totalScore;
+  const t=getTitle(PROGRESS);
+  document.getElementById('title-tag').textContent = t.name;
+  document.getElementById('balance-val').textContent = PROGRESS.balance;
+}
+
+// ===== 自动对话 =====
+const AUTO_INTERVAL = 15;
+
+function updateAutoDialogue(dt) {
+  if (!isPlaying || !soulArrived || judgingMode || !currentSoul || askedQuestions.length === 0) return;
+  autoTimer += dt;
+  if (autoTimer >= AUTO_INTERVAL) {
+    autoTimer = 0;
+    autoIdx++;
+    let line;
+    // Occasionally mention concern
+    if (autoIdx % 3 === 0 && currentSoul && currentSoul.concern) {
+      line = `唉…${currentSoul.concern}`;
+    } else {
+      const lines = currentSoul.lines.auto;
+      if (lines && lines.length > 0) line = lines[autoIdx % lines.length];
+    }
+    if (line) {
+      showBubble(`"${line}"`, `${currentSoul.name}（自言自语）`, '');
+      speak(line, currentSoul.voicePitch, currentSoul.voiceRate * 0.9);
+      autoTriggers++;
+    }
+  }
+}
+
+// ===== 动画循环 =====
+let animTime = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+  animTime += 0.016;
+
+  // Lanterns
+  lanterns.forEach((l,i)=>{
+    l.sprite.position.y+=Math.sin(animTime*l.speed+l.phase)*.003;
+    l.sprite.rotation.y=animTime*.2+i;
+  });
+
+  // Waiting souls
+  waitingSouls.forEach((w,i)=>{
+    w.group.position.y=w.baseY+Math.sin(animTime*.8+w.phase)*.15;
+    w.group.rotation.y=animTime*.05+i;
+  });
+
+  // Holes
+  holes.forEach((p,i)=>{
+    const pulse = .3 + Math.sin(animTime*1.2+i*1.8)*.15;
+    p.glow.material.emissiveIntensity = pulse;
+    p.beam.material.opacity = .08 + Math.sin(animTime*1.5+i*1.8)*.04;
+    p.pLight.intensity = .2+Math.sin(animTime*1.5+i*1.8)*.12;
+  });
+
+  // Ambient particles
+  const pos = ambientPts.geometry.attributes.position.array;
+  for (let i=0; i<APC; i++) { pos[i*3+1] += .003*apSpd[i]; if (pos[i*3+1]>10) pos[i*3+1]=0; }
+  ambientPts.geometry.attributes.position.needsUpdate = true;
+
+  // Soul
+  if (soulGroup) {
+    soulFloatPhase += 0.016;
+    const bob = Math.sin(soulFloatPhase * 2) * .05;
+    const targetY = soulArrived ? 1.1 + bob : 1.1;
+    soulGroup.position.y += (targetY - soulGroup.position.y) * .03;
+    soulGroup.rotation.y += .006;
+    soulGroup.position.x = Math.sin(soulFloatPhase * .35) * .06;
+
+    const targetScale = soulArrived ? 1 : .3;
+    const s = soulGroup.scale.x + (targetScale - soulGroup.scale.x) * .05;
+    soulGroup.scale.set(s,s,s);
+
+    // Breathing (body scale)
+    const breathe = 1 + Math.sin(soulFloatPhase * 1.8) * .015;
+    if (soulGroup.userData.body) soulGroup.userData.body.scale.y = breathe;
+    if (soulGroup.userData.robe) soulGroup.userData.robe.scale.set(breathe, 1, breathe);
+    if (soulGroup.userData.robe2) soulGroup.userData.robe2.scale.set(breathe*1.1, 1, breathe*1.1);
+
+    // Arm sway
+    if (soulArms) {
+      soulArms.forEach((arm, i) => {
+        if (arm) arm.rotation.z = (i===0?1:-1) * (.15 + Math.sin(soulFloatPhase * 1.5 + i) * .12);
+      });
+    }
+
+    // Aura particle orbit
+    if (soulGroup.userData.auraPts && soulGroup.userData.auraData) {
+      const aPos = soulGroup.userData.auraPts.geometry.attributes.position.array;
+      const aData = soulGroup.userData.auraData;
+      for (let i=0; i<aData.length; i++) {
+        const d = aData[i];
+        const a = d.angle + soulFloatPhase * d.speed;
+        aPos[i*3] = Math.cos(a) * d.radius;
+        aPos[i*3+1] = .4 + d.height + Math.sin(soulFloatPhase * d.speed + d.phase) * .05;
+        aPos[i*3+2] = Math.sin(a) * d.radius;
+      }
+      soulGroup.userData.auraPts.geometry.attributes.position.needsUpdate = true;
+    }
+
+    // Head tilt
+    if (soulGroup.userData.head) {
+      soulGroup.userData.head.rotation.z = Math.sin(soulFloatPhase * .8) * .03;
+    }
+
+    if (!soulArrived && soulGroup.position.y > 0.8) {
+      soulArrived = true;
+      currentSoulData = currentSoul;
+      if (currentSoulData) soulEnter(currentSoulData);
+    }
+  }
+
+  // Auto dialogue
+  updateAutoDialogue(0.016);
+
+  // Skill effects
+  updateSkillEffects();
+
+  // Hole hover
+  const hIntersects = getHoleIntersects();
+  holes.forEach(p => {
+    const hovered = hIntersects.length > 0 && hIntersects[0].object === p.clickMesh;
+    if (hovered !== p.hovered) {
+      p.hovered = hovered;
+      p.glow.material.emissiveIntensity = hovered ? 1.2 : .5;
+      p.glow.material.opacity = hovered ? .9 : .6;
+      p.label.element.style.color = hovered ? '#fff' : `#${new THREE.Color(p.data.color).getHexString()}`;
+    }
+  });
+
+  renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
+}
+
+// ===== Resize =====
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ===== Init =====
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', ()=>{document.getElementById('end-screen').classList.remove('visible');startGame();});
+
+const lb = document.getElementById('load-bar'); let lp=0;
+const li = setInterval(()=>{lp+=Math.random()*15;if(lp>100)lp=100;lb.style.width=lp+'%';if(lp>=100){clearInterval(li);setTimeout(()=>document.getElementById('loading').classList.add('hidden'),400);}},200);
+
+updateSkillUI();
+animate();
+
+// ===== Embedded mode =====
+const isEmbed = new URLSearchParams(window.location.search).get('embed') === '1';
+if (isEmbed) {
+  document.getElementById('exit-btn').style.display='inline-block';
+  document.getElementById('exit-btn').addEventListener('click',()=>{
+    window.parent.postMessage({type:'exitGame'},'*');
+  });
+  // Notify parent when game ends
+  const origEnd = endGame;
+  endGame = function() {
+    origEnd.apply(this, arguments);
+    window.parent.postMessage({type:'gameEnd',score:totalScore},'*');
+  };
+}
+
+console.log('🏛️ 阴间规划局 v3 — 新官上任');
+console.log('💬 聊天 · 🔧 法器 · 💰 冥币打赏');
+</script>
+</body>
+</html>

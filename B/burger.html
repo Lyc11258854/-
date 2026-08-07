@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动物汉堡店 - 暴怒厨房</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a0a00; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'Segoe UI', Arial, sans-serif; }
+#backBtn { position: fixed; top: 16px; left: 16px; z-index: 999; padding: 6px 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(0,0,0,0.5); color: #aaa; font-size: 13px; cursor: pointer; text-decoration: none; backdrop-filter: blur(4px); transition: 0.2s; }
+#backBtn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+#app { width: 1000px; height: 700px; background: #4a3020; border-radius: 24px; position: relative; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+
+#topBar { height: 52px; background: #1a0a00; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: #fff; flex-shrink: 0; }
+#topBar .title { font-size: 18px; font-weight: bold; color: #fda; }
+#topBar .stats { display: flex; gap: 16px; font-size: 13px; }
+#topBar .stats span { background: rgba(255,255,255,0.08); padding: 4px 12px; border-radius: 8px; }
+
+#main { display: flex; flex: 1; overflow: hidden; }
+
+#customerPanel { width: 270px; background: #f5e6d0; padding: 14px; display: flex; flex-direction: column; align-items: center; }
+#customerSprite { font-size: 68px; margin-bottom: 2px; }
+#customerName { font-size: 16px; font-weight: bold; color: #3a2a1a; }
+#customerTitle { font-size: 11px; color: #a98; margin-bottom: 4px; }
+#moodBar { width: 100%; height: 7px; background: #ddd; border-radius: 4px; overflow: hidden; margin: 4px 0; }
+#moodFill { height: 100%; background: linear-gradient(90deg,#f44,#fa0,#4f4); width: 100%; border-radius: 4px; transition: width 0.5s; }
+#moodLabel { font-size: 10px; color: #888; margin-bottom: 4px; }
+#speech { background: #fff; border: 2px solid #3a2a1a; border-radius: 12px; padding: 10px 12px; width: 100%; min-height: 48px; font-size: 12px; color: #333; position: relative; margin: 4px 0; }
+#speech:after { content:''; position:absolute; top:-10px; left:30px; border:5px solid transparent; border-bottom-color:#fff; border-top:0; }
+#speech .speaker { font-weight: bold; color: #f44; font-size: 11px; }
+#speech .text { line-height: 1.4; margin-top: 2px; }
+#orderDisplay { background: #fff8ee; border: 2px dashed #c9a; border-radius: 10px; padding: 6px 10px; width: 100%; margin-top: 4px; text-align: center; }
+#orderDisplay .label { font-size: 10px; color: #a98; }
+#orderDisplay .items { font-size: 12px; color: #542; margin-top: 2px; min-height: 18px; }
+
+#chatOptions { width: 100%; margin-top: 6px; display: none; flex-direction: column; gap: 4px; }
+.chatBtn { padding: 6px 10px; border: 2px solid #c9a; border-radius: 8px; background: #fff; cursor: pointer; font-size: 11px; text-align: left; transition: 0.15s; color: #333; }
+.chatBtn:hover { border-color: #f80; background: #fff8f0; }
+.chatBtn .tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; margin-right: 4px; color: #fff; }
+.tag-nice { background: #4a4; }
+.tag-neutral { background: #a80; }
+.tag-rude { background: #c44; }
+
+#burgerPanel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px 12px; background: #3a2212; position: relative; }
+#burgerTitle { font-size: 12px; color: #b98; margin-bottom: 4px; }
+#burgerVisual { display: flex; flex-direction: column-reverse; align-items: center; width: 240px; min-height: 310px; justify-content: flex-start; margin-bottom: 6px; }
+.bLayer { width: 200px; flex-shrink: 0; position: relative; }
+
+.bunB-layer { height: 28px; margin-bottom: 0; }
+.bunB-layer svg { width: 100%; height: 100%; }
+.patty-layer { height: 26px; }
+.patty-layer svg { width: 100%; height: 100%; }
+.bacon-layer { height: 14px; }
+.bacon-layer svg { width: 100%; height: 100%; }
+.cheese-layer { height: 16px; }
+.cheese-layer svg { width: 100%; height: 100%; }
+.onion-layer { height: 14px; }
+.onion-layer svg { width: 100%; height: 100%; }
+.lettuce-layer { height: 18px; }
+.lettuce-layer svg { width: 100%; height: 100%; }
+.tomato-layer { height: 16px; }
+.tomato-layer svg { width: 100%; height: 100%; }
+.sauce-layer { height: 12px; }
+.sauce-layer svg { width: 100%; height: 100%; }
+.bunT-layer { height: 34px; }
+.bunT-layer svg { width: 100%; height: 100%; }
+
+#burgerActions { display: flex; gap: 8px; margin-top: 4px; }
+#submitBtn { padding: 10px 36px; border: none; border-radius: 12px; background: linear-gradient(135deg,#f80,#f44); color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.15s; }
+#submitBtn:disabled { opacity: 0.3; cursor: not-allowed; }
+#clearBtn { padding: 10px 20px; border: none; border-radius: 12px; background: #554; color: #ccc; font-size: 14px; cursor: pointer; }
+
+#ingredientPanel { width: 190px; background: #2a1a0a; padding: 10px; display: flex; flex-direction: column; }
+#ingredientPanel h3 { color: #fda; font-size: 12px; margin-bottom: 6px; }
+#ingredientList { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow-y: auto; }
+.ingBtn { padding: 5px 6px; border: 2px solid #5a4a3a; border-radius: 6px; background: #4a3a2a; color: #fff; cursor: pointer; font-size: 11px; text-align: center; transition: 0.15s; }
+.ingBtn:hover { background: #5a4a3a; border-color: #fda; }
+.ingBtn:active { transform: scale(0.95); }
+.ingBtn .emoji { font-size: 16px; display: block; }
+
+#dayEnd { position:absolute; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.7); z-index:50; display:none; align-items:center; justify-content:center; }
+#dayEndBox { background:#2a1a0a; border-radius:24px; padding:28px 36px; text-align:center; max-width:400px; color:#fff; }
+#dayEndBox h2 { font-size:26px; margin-bottom:4px; }
+#dayEndBox .sub { color:#a98; font-size:13px; margin-bottom:12px; }
+#dayEndBox .row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:13px; }
+#dayEndBox .total { font-size:20px; color:#fd0; margin:10px 0; }
+#dayEndBox .eval { background:rgba(255,255,255,0.06); border-radius:10px; padding:10px; margin:10px 0; font-size:13px; color:#fda; }
+#dayEndBox button { padding:10px 36px; border:none; border-radius:12px; background:linear-gradient(135deg,#f80,#f44); color:#fff; font-size:15px; cursor:pointer; margin-top:4px; }
+
+#startScreen { position:absolute; top:0;left:0;right:0;bottom:0; background:linear-gradient(135deg,#2a1a0a,#4a2a1a); z-index:60; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; }
+#startScreen h1 { font-size:46px; margin-bottom:4px; }
+#startScreen .sub { color:#fda; font-size:14px; margin-bottom:4px; }
+#startScreen .flavor { color:#a98; font-size:12px; max-width:360px; text-align:center; margin-bottom:18px; }
+#startBtnMain { padding:14px 56px; border:none; border-radius:16px; background:linear-gradient(135deg,#f80,#f44); color:#fff; font-size:20px; font-weight:bold; cursor:pointer; transition:0.2s; }
+#startBtnMain:hover { transform:scale(1.05); }
+#backBtn { position:fixed; top:16px; left:16px; z-index:999; padding:6px 14px; border:1px solid rgba(255,255,255,0.2); border-radius:8px; background:rgba(0,0,0,0.5); color:#aaa; font-size:13px; cursor:pointer; text-decoration:none; backdrop-filter:blur(4px); transition:0.2s; }
+#backBtn:hover { background:rgba(255,255,255,0.1); color:#fff; }
+</style>
+</head>
+<body>
+<a id="backBtn" href="index.html">← 大厅</a>
+<div id="app">
+
+  <div id="topBar">
+    <div class="title">🍔 暴怒汉堡</div>
+    <div class="stats">
+      <span>📅 第 <b id="dayNum">1</b> 天</span>
+      <span>👤 <b id="customerNum">0</b>/5</span>
+      <span>💰 <b id="moneyDisplay">0</b></span>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="customerPanel">
+      <div id="customerSprite">🐱</div>
+      <div id="customerName">猫小咪</div>
+      <div id="customerTitle">流浪猫</div>
+      <div id="moodBar"><div id="moodFill"></div></div>
+      <div id="moodLabel">😄 耐心 100%</div>
+      <div id="speech">
+        <div class="speaker"><span id="speechSpeaker">🐱 猫小咪</span></div>
+        <div class="text" id="speechText">快点做！</div>
+      </div>
+      <div id="orderDisplay">
+        <div class="label">📋 订单</div>
+        <div class="items" id="orderItems"></div>
+      </div>
+      <div id="chatOptions"></div>
+    </div>
+
+    <div id="burgerPanel">
+      <div id="burgerTitle">🧑‍🍳 组装汉堡</div>
+      <div id="burgerVisual"><div style="color:#b98;font-size:14px;padding:40px 0;text-align:center;">🍔 点击右侧食材<br>开始制作</div></div>
+      <div id="burgerActions">
+        <button id="submitBtn" disabled>🍔 出餐</button>
+        <button id="clearBtn">🗑 重做</button>
+      </div>
+    </div>
+
+    <div id="ingredientPanel">
+      <h3>🥘 食材</h3>
+      <div id="ingredientList"></div>
+    </div>
+  </div>
+
+  <div id="dayEnd">
+    <div id="dayEndBox">
+      <h2>📊 打烊</h2>
+      <div class="sub" id="dayEndSub">第 1 天</div>
+      <div class="row"><span>🍔 完成</span><span id="deOrders">0/5</span></div>
+      <div class="row"><span>⭐ 均分</span><span id="deRating">0.0</span></div>
+      <div class="row"><span>💰 日收</span><span id="deIncome">0</span></div>
+      <div class="total">💰 总资产: <span id="deTotal">0</span></div>
+      <div class="eval" id="deEval"></div>
+      <button onclick="nextDay()">📅 下一天</button>
+    </div>
+  </div>
+
+  <div id="startScreen">
+    <h1>🍔 暴怒汉堡</h1>
+    <div class="sub">动物界最黑暗的料理摊</div>
+    <div class="flavor">5 个恶劣客人 · 身份各异 · 耐心有限<br>汉堡做太慢？等着被喷成筛子吧。</div>
+    <button id="startBtnMain" onclick="startGame()">🔥 开始受罪</button>
+  </div>
+</div>
+
+<script>
+function svgBunB() {
+  return `<svg viewBox="0 0 200 28"><ellipse cx="100" cy="20" rx="96" ry="12" fill="#c49030"/><ellipse cx="100" cy="18" rx="94" ry="10" fill="#d4a040"/><ellipse cx="100" cy="16" rx="90" ry="8" fill="#e0b050"/></svg>`;
+}
+function svgPatty() {
+  return `<svg viewBox="0 0 200 26"><rect x="8" y="4" width="184" height="18" rx="9" fill="#5a3020"/><rect x="12" y="6" width="176" height="14" rx="7" fill="#6a4030"/><rect x="16" y="8" width="168" height="10" rx="5" fill="#7a5040"/><line x1="40" y1="10" x2="60" y2="10" stroke="#4a2010" stroke-width="1.5" stroke-linecap="round"/><line x1="90" y1="12" x2="120" y2="12" stroke="#4a2010" stroke-width="1.5" stroke-linecap="round"/><line x1="150" y1="9" x2="170" y2="9" stroke="#4a2010" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+}
+function svgBacon() {
+  return `<svg viewBox="0 0 200 14"><path d="M10,7 Q30,2 50,7 Q70,12 90,7 Q110,2 130,7 Q150,12 170,7 Q185,3 195,7" fill="none" stroke="#a04030" stroke-width="4" stroke-linecap="round"/><path d="M12,7 Q32,3 52,7 Q72,11 92,7" fill="none" stroke="#b05040" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg>`;
+}
+function svgCheese() {
+  return `<svg viewBox="0 0 200 16"><path d="M5,12 L25,3 L55,10 L85,2 L115,9 L145,3 L175,11 L195,4 L195,14 L5,14 Z" fill="#eda000"/><path d="M25,3 L55,10 L85,2 L115,9 L145,3 L175,11" fill="none" stroke="#d08000" stroke-width="1" opacity="0.4"/></svg>`;
+}
+function svgOnion() {
+  return `<svg viewBox="0 0 200 14"><ellipse cx="100" cy="7" rx="90" ry="6" fill="#c0a0d0"/><ellipse cx="100" cy="7" rx="70" ry="4" fill="#d0b0e0"/><ellipse cx="100" cy="7" rx="40" ry="2" fill="#e0c0f0"/><path d="M100,1 L100,13" stroke="#a080b0" stroke-width="0.5" opacity="0.3"/></svg>`;
+}
+function svgLettuce() {
+  return `<svg viewBox="0 0 200 18"><path d="M5,12 Q30,0 60,8 Q90,2 120,10 Q150,1 180,9 Q195,4 195,12 Q180,18 150,14 Q120,18 90,12 Q60,16 30,12 Q15,14 5,12 Z" fill="#4a8a3a"/><path d="M5,12 Q30,4 60,10 Q90,5 120,11 Q150,4 180,10" fill="none" stroke="#5a9a4a" stroke-width="1.5"/></svg>`;
+}
+function svgTomato() {
+  return `<svg viewBox="0 0 200 16"><ellipse cx="100" cy="8" rx="95" ry="7" fill="#d04030"/><ellipse cx="100" cy="8" rx="88" ry="6" fill="#e05040"/><ellipse cx="100" cy="8" rx="60" ry="3" fill="#f06050"/><line x1="60" y1="8" x2="140" y2="8" stroke="#c03020" stroke-width="0.8" opacity="0.3"/></svg>`;
+}
+function svgSauce() {
+  return `<svg viewBox="0 0 200 12"><path d="M20,6 Q60,2 100,6 Q140,10 180,6" fill="none" stroke="#d08020" stroke-width="5" stroke-linecap="round"/><path d="M30,5 Q70,3 100,5 Q130,7 170,5" fill="none" stroke="#e09030" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg>`;
+}
+function svgBunT() {
+  return `<svg viewBox="0 0 200 34"><ellipse cx="100" cy="28" rx="96" ry="10" fill="#c49030"/><ellipse cx="100" cy="24" rx="96" ry="14" fill="#d4a040"/><ellipse cx="100" cy="20" rx="90" ry="16" fill="#e0b050"/><circle cx="50" cy="12" r="2" fill="#d4a040" opacity="0.6"/><circle cx="80" cy="8" r="1.5" fill="#d4a040" opacity="0.6"/><circle cx="120" cy="10" r="2" fill="#d4a040" opacity="0.6"/><circle cx="150" cy="14" r="1.5" fill="#d4a040" opacity="0.6"/><circle cx="100" cy="6" r="1.8" fill="#d4a040" opacity="0.6"/></svg>`;
+}
+
+const INGREDIENT_DATA = {
+  bunB:{name:'底层面包',emoji:'🍞',svg:svgBunB,cls:'bunB-layer'},
+  patty:{name:'牛肉饼',emoji:'🥩',svg:svgPatty,cls:'patty-layer'},
+  bacon:{name:'培根',emoji:'🥓',svg:svgBacon,cls:'bacon-layer'},
+  cheese:{name:'芝士',emoji:'🧀',svg:svgCheese,cls:'cheese-layer'},
+  onion:{name:'洋葱',emoji:'🧅',svg:svgOnion,cls:'onion-layer'},
+  lettuce:{name:'生菜',emoji:'🥬',svg:svgLettuce,cls:'lettuce-layer'},
+  tomato:{name:'番茄',emoji:'🍅',svg:svgTomato,cls:'tomato-layer'},
+  sauce:{name:'秘制酱',emoji:'🫗',svg:svgSauce,cls:'sauce-layer'},
+  bunT:{name:'顶层面包',emoji:'🍞',svg:svgBunT,cls:'bunT-layer'},
+};
+
+const INGREDIENT_LIST = ['bunB','patty','lettuce','tomato','cheese','onion','bacon','sauce','bunT'];
+const LAYER_ORDER = ['bunB','patty','bacon','cheese','onion','lettuce','tomato','sauce','bunT'];
+
+const CUSTOMERS = [
+  { id:'beggarDog', name:'老赖狗', emoji:'🐕', title:'流浪狗 · 三天没吃饭', patience:180,
+    greet:['饿疯了！有啥给啥！…但别想糊弄我。','我虽然是个要饭的，但嘴可刁了。','快点儿，我闻着对街的垃圾桶也不错。'],
+    correct:['居然还挺好吃！你比垃圾桶强！','不错不错，有前途！','我今天算是走狗屎运了。'],
+    wrong:['我讨了三年饭都没吃过这么难吃的东西。','你是想毒死我好继承我的破碗吗？','这玩意儿狗都不吃。哦对，我就是狗，我不吃。'],
+    mood_low:['饿死了饿死了！你是在做汉堡还是在种小麦？！','我的胃已经饿到在反抗了。','再等下去我只能吃桌子了。'],
+    eval_high:'老赖狗舔干净盘子：「我这辈子没吃过这么好的东西！虽然我这辈子也不长。」',
+    eval_mid:'老赖狗打了个嗝：「还行吧，比我预想的好。虽然我预想的是毒药。」',
+    eval_low:'老赖狗失望地走了：「我还是去翻垃圾桶吧，至少垃圾桶从不让我失望。」',
+    chats:[
+      {text:'你今天气色不错啊',tag:'nice',reply:'你人还怪好的嘞！冲你这句话我明天还来！'},
+      {text:'你是我见过最帅的狗',tag:'nice',reply:'虽然我知道你在拍马屁…但我爱听！继续！'},
+      {text:'你最近过得怎么样',tag:'nice',reply:'还行吧，虽然这几天翻到的垃圾桶都不太丰富。'},
+      {text:'快点吃完快点走',tag:'neutral',reply:'催啥催，我这不是在等着嘛。你比我还急？'},
+      {text:'今天生意不太好',tag:'neutral',reply:'那肯定是因为你做得太难吃了。跟我没关系。'},
+      {text:'你觉得我手艺怎么样',tag:'neutral',reply:'我还没吃到呢，但闻起来…算了我不说了伤你自尊。'},
+      {text:'你身上有点味儿你知道吗',tag:'rude',reply:'你说这话跟你的厨艺一样寒酸。我要是有钱就给你的嘴缝上。'},
+      {text:'你是不是傻',tag:'rude',reply:'我不傻，我聪明着呢。你才傻，你全家都傻。'},
+      {text:'你看什么看',tag:'rude',reply:'我看你什么时候能把汉堡做好。看半天了，还在做。'}
+    ]
+  },
+  { id:'richCat', name:'贵妇猫', emoji:'😾', title:'富豪名媛 · 米其林常客', patience:120,
+    greet:['这地方看起来就不卫生。','希望你的厨艺比你的装修强。','我平时去米其林，今天来体验民间疾苦。'],
+    correct:['嗯，勉强达到我的最低标准。','居然能入口？我有点意外。','行吧，比我想象的好——虽然我想象的是灾难。'],
+    wrong:['我花十秒拍的照都比这汉堡好看。','这是汉堡还是车祸现场？','我怀疑你在报复社会。'],
+    mood_low:['你知不知道我一分钟值多少钱？','我的耐心和你的厨艺一样有限。','我再给你十秒，不然我走了。'],
+    eval_high:'贵妇猫戴上墨镜：「虽然远不及米其林，但在街头算能吃的了。小费赏你。」',
+    eval_mid:'贵妇猫叹了口气：「凑合吧。我需要一个假期来忘记这顿饭。」',
+    eval_low:'贵妇猫摔下餐巾：「我决定去投诉。虽然不知道投诉谁，但我一定要投诉。」',
+    chats:[
+      {text:'您今天穿得真优雅',tag:'nice',reply:'哼，算你有眼光。我这件是真丝的，你一年的工资都买不起。'},
+      {text:'您的包包好好看',tag:'nice',reply:'限量版，你买不到的。别想了，专心做你的汉堡。'},
+      {text:'您气质真好',tag:'nice',reply:'我当然知道。你不用一直强调，我又不会给你加钱。'},
+      {text:'米其林是什么味道的',tag:'neutral',reply:'说了你也不懂。你先把汉堡做好行吗？'},
+      {text:'有钱人也会来这种店啊',tag:'neutral',reply:'偶尔体验一下底层生活，有助于我写慈善捐款的文案。'},
+      {text:'你觉得我这店怎么样',tag:'neutral',reply:'装修丑、氛围差、厨子看起来也不靠谱——我是说整体风格。'},
+      {text:'有钱了不起啊',tag:'rude',reply:'了不起啊，至少我吃得起比你好的。你有意见？'},
+      {text:'你除了钱还有啥',tag:'rude',reply:'还有品味、外貌和智商。你呢？除了嘴硬还有啥？'},
+      {text:'你是在炫富吗',tag:'rude',reply:'我不用炫，我站在这里就是富。你连这都看不出来？'}
+    ]
+  },
+  { id:'workerFox', name:'社畜狐', emoji:'🦊', title:'打工人 · 刚被老板骂完', patience:150,
+    greet:['刚下班，累死了，给我来点治愈的。','今天糟透了，你的汉堡最好别更糟。','随便做点啥，能让我忘记今天就行。'],
+    correct:['啊…活过来了。谢谢你。','这个汉堡拯救了我的一天。','好吃！终于有一件好事了。'],
+    wrong:['连你也欺负我？？','我今天已经够惨了，你还给我吃这个？','你是不是老板派来折磨我的？'],
+    mood_low:['我的耐心和我的工资一样——所剩无几。','求你了，我只想在饿死之前吃上饭。','你再不出餐我就要饿晕在店里了。'],
+    eval_high:'社畜狐露出今天第一个笑容：「明天加班我也要再来吃！」',
+    eval_mid:'社畜狐揉了揉脸：「还行，至少比我们公司食堂好吃。」',
+    eval_low:'社畜狐瘫在椅子上：「连汉堡都欺负我…这世界没救了。」',
+    chats:[
+      {text:'辛苦了，今天不容易吧',tag:'nice',reply:'你人真好…比我们老板强一万倍！要不你来我们公司上班吧。'},
+      {text:'你值得更好的公司',tag:'nice',reply:'呜呜你说得我都要哭了。你是我遇见过最温暖的人！'},
+      {text:'你的领带很有品味',tag:'nice',reply:'真的吗？！这是我在地摊买的，你眼光真好！'},
+      {text:'工作嘛，哪有不累的',tag:'neutral',reply:'你说得对…但我还是想骂老板。算了，先吃吧。'},
+      {text:'你老板是个什么样的人',tag:'neutral',reply:'跟你做饭的水平差不多——看起来还行，吃下去想吐。'},
+      {text:'今天加班到几点',tag:'neutral',reply:'九点。不，十点。不，我记不清了，我的记忆已经被工作吞噬了。'},
+      {text:'比你惨的人多了去了',tag:'rude',reply:'你说话怎么跟我老板一个德性？行行好，我今天真受不了了。'},
+      {text:'你不行啊这都受不了',tag:'rude',reply:'你行你上啊！你来被老板骂一天试试！'},
+      {text:'你是不是能力不行',tag:'rude',reply:'我能力不行？我能力不行能活到今天？你能力行你来做汉堡啊！'}
+    ]
+  },
+  { id:'foodiePig', name:'饕餮猪', emoji:'🐷', title:'职业吃货 · 嘴巴没停过', patience:130,
+    greet:['我饿了！非常饿！十万火急地饿！','快！我已经在流口水了！','希望你做汉堡的速度能有我吃的速度一半快。'],
+    correct:['好吃到我想哭！！','完美！再来五个！！','这是我今天吃的第四顿，但绝对是最好的一顿！'],
+    wrong:['（眼泪汪汪）你辜负了一个吃货的心。','这不叫汉堡，这叫诈骗。','我的心碎了，碎成了汉堡屑。'],
+    mood_low:['我饿到可以吃下一头牛了…快…点…','肚子在抗议了！你听到了吗！','你再不出餐我就要生吃食材了！'],
+    eval_high:'饕餮猪拍着肚子：「我会在吃货点评网上给你五星！虽然我是唯一用户。」',
+    eval_mid:'饕餮猪摸着半饱的肚子：「还行吧，勉强够塞牙缝。」',
+    eval_low:'饕餮猪含泪离开：「我决定绝食抗议…绝食到明天早上。」',
+    chats:[
+      {text:'你是我见过最懂吃的客人',tag:'nice',reply:'你懂食物！你是我异父异母的亲兄弟！冲你这句话我加十个汉堡！'},
+      {text:'你吃东西的样子真香',tag:'nice',reply:'那当然！吃是我的天赋！你要不要跟我学两招？'},
+      {text:'你是我最喜欢的客人',tag:'nice',reply:'我单方面宣布你就是我的一生挚友！虽然我连你名字都不知道。'},
+      {text:'吃这么多不怕胖吗',tag:'neutral',reply:'人生苦短，胖就胖呗！你怎么跟个营养师一样啰嗦。'},
+      {text:'你一天吃几顿',tag:'neutral',reply:'我一天吃五顿，再加三顿零食。怎么了？羡慕了？'},
+      {text:'你试过减肥吗',tag:'neutral',reply:'减过。减了三天，差点饿死。从此我知道了——我的人生不能没有食物。'},
+      {text:'你是猪吗吃这么多',tag:'rude',reply:'我就是猪！怎么啦！你种族歧视啊！'},
+      {text:'你也太能吃了吧',tag:'rude',reply:'能吃是福！你懂个屁！我看你就是嫉妒我的食量！'},
+      {text:'你不怕撑死吗',tag:'rude',reply:'撑死也比饿死强！你这话说的跟诅咒一样，我记住你了！'}
+    ]
+  },
+  { id:'criticOwl', name:'毒舌枭', emoji:'🦉', title:'美食评论家 · 专业差评师', patience:120,
+    greet:['我来了，准备好接受批评了吗？','别紧张，我每篇差评都很有建设性。','让我看看你今天会不会刷新我的认知下限。'],
+    correct:['这次居然没翻车？我的稿子白写了。','嗯，合格。虽然我的标准也并不高。','不错，我甚至有点失望——因为我找不出毛病。'],
+    wrong:['这汉堡的存在本身就是对美食的侮辱。','建议你改行。任何一行都比这强。','我会在评论里写一千字，每个字都是对你的失望。'],
+    mood_low:['我的耐心正在以秒为单位流失。','你正在浪费一位伟大评论家的时间。','我已经在构思差评的开头了。'],
+    eval_high:'毒舌枭合上笔记本：「出乎意料的好。我会在文章里轻描淡写地提一句。」',
+    eval_mid:'毒舌枭推了推眼镜：「平庸。但平庸总比灾难好——虽然也没好多少。」',
+    eval_low:'毒舌枭冷笑着离开：「明天我还会来。毕竟，差评需要持续更新。」',
+    chats:[
+      {text:'您的评论我都拜读过',tag:'nice',reply:'哦？你倒是有点品位。比你的厨师证有含金量。'},
+      {text:'您是我最尊敬的评论家',tag:'nice',reply:'你这话说得我很受用。虽然我知道你是在拍马屁——但拍得不错。'},
+      {text:'您的文章写得真好',tag:'nice',reply:'那当然，我的一篇文章抵你一个月工资。继续夸，我爱听。'},
+      {text:'你觉得这家店怎么样',tag:'neutral',reply:'我正在感受。目前感受是——还需要更多感受。你不要打断我的感受。'},
+      {text:'写评论难吗',tag:'neutral',reply:'骂人有什么难的？尤其是骂做得难吃的人——简直是文思泉涌。'},
+      {text:'你吃过多少家店',tag:'neutral',reply:'比你吃过的饭还多。虽然你看起来也没吃过几顿好的。'},
+      {text:'你写差评是不是没饭吃',tag:'rude',reply:'我的差评比你做的汉堡有营养多了。建议你少说话多做事。'},
+      {text:'你是不是只会挑刺',tag:'rude',reply:'我的工作是挑刺，而你——你的工作是连刺都做不好。'},
+      {text:'你说话好刻薄',tag:'rude',reply:'刻薄？我这才用了三成功力。你要不要听一下十成功力版本？'}
+    ]
+  },
+];
+
+// ============ STATE ============
+let state = {
+  day:1, money:0, customerIndex:0,
+  dailyIncome:0, completedOrders:0, totalOrders:5, ratings:[],
+  currentCustomer:null, currentOrder:[], burger:[],
+  phase:'start', mood:100, maxMood:100,
+  orderStartTime:0, submitted:false,
+  usedChatIndices:[],
+};
+let moodInterval = null;
+
+const $=id=>document.getElementById(id);
+const ingredientList=$('ingredientList');
+const burgerVisual=$('burgerVisual');
+const submitBtn=$('submitBtn');
+const clearBtn=$('clearBtn');
+const orderItems=$('orderItems');
+const speechText=$('speechText');
+const customerSprite=$('customerSprite');
+const customerName=$('customerName');
+const customerTitle=$('customerTitle');
+const moodFill=$('moodFill');
+const moodLabel=$('moodLabel');
+const chatOptions=$('chatOptions');
+const dayNum=$('dayNum');
+const customerNum=$('customerNum');
+const moneyDisplay=$('moneyDisplay');
+const dayEnd=$('dayEnd');
+const dayEndSub=$('dayEndSub');
+const deOrders=$('deOrders');
+const deRating=$('deRating');
+const deIncome=$('deIncome');
+const deTotal=$('deTotal');
+const deEval=$('deEval');
+
+function renderIngredients() {
+  ingredientList.innerHTML = '';
+  for (const id of INGREDIENT_LIST) {
+    const d = INGREDIENT_DATA[id];
+    const btn = document.createElement('div');
+    btn.className = 'ingBtn';
+    btn.innerHTML = `<span class="emoji">${d.emoji}</span>${d.name}`;
+    btn.onclick = () => addIngredient(id);
+    ingredientList.appendChild(btn);
+  }
+}
+
+function addIngredient(id) {
+  if (state.phase!=='playing' || state.submitted) return;
+  state.burger.push(id);
+  renderBurgerVisual();
+  validateBurger();
+}
+
+function renderBurgerVisual() {
+  if (!state.burger.length) {
+    burgerVisual.innerHTML = '<div style="color:#b98;font-size:14px;padding:40px 0;text-align:center;">🍔 点击右侧食材<br>开始制作</div>';
+    return;
+  }
+  const sorted = [...state.burger].sort((a,b)=>LAYER_ORDER.indexOf(a)-LAYER_ORDER.indexOf(b));
+  let html = '';
+  for (const id of sorted) {
+    const d = INGREDIENT_DATA[id];
+    if (!d) continue;
+    html += `<div class="bLayer ${d.cls}">${d.svg()}</div>`;
+  }
+  burgerVisual.innerHTML = html;
+}
+
+function validateBurger() {
+  const s = state.burger;
+  submitBtn.disabled = !(s.includes('bunB') && s.includes('bunT') && s.includes('patty'));
+}
+
+clearBtn.onclick = () => {
+  if (state.phase!=='playing' || state.submitted) return;
+  state.burger = []; renderBurgerVisual(); submitBtn.disabled = true;
+};
+
+function generateOrder() {
+  const extras = ['lettuce','tomato','cheese','onion','bacon','sauce'];
+  const num = 2 + Math.floor(Math.random()*3);
+  const picked = extras.sort(()=>Math.random()-0.5).slice(0,num);
+  return [...picked, 'bunB','patty','bunT'];
+}
+
+function renderOrder() {
+  const names = state.currentOrder.map(id => {
+    const d = INGREDIENT_DATA[id];
+    return d ? `${d.emoji}${d.name}` : id;
+  });
+  orderItems.textContent = names.join(' · ');
+}
+
+function pickCustomer() { return CUSTOMERS[Math.floor(Math.random()*CUSTOMERS.length)]; }
+function randomLine(a) { return a[Math.floor(Math.random()*a.length)]; }
+function setSpeech(text) { speechText.textContent = text; }
+
+function updateMood() {
+  const p = Math.max(0, state.mood);
+  moodFill.style.width = p + '%';
+  const e = p>66?'😄':(p>33?'😐':'😤');
+  moodLabel.textContent = `${e} 耐心 ${Math.floor(p)}%`;
+}
+
+function startMoodTimer() {
+  if (moodInterval) clearInterval(moodInterval);
+  state.mood = state.maxMood;
+  state.orderStartTime = Date.now();
+  state.submitted = false;
+  state.usedChatIndices = [];
+  moodInterval = setInterval(() => {
+    if (state.phase!=='playing' || state.submitted) return;
+    const elapsed = (Date.now()-state.orderStartTime)/1000;
+    const c = state.currentCustomer;
+    state.mood = Math.max(0, 100 - (elapsed/c.patience)*100);
+    updateMood();
+    if (state.mood<30 && state.mood>28) {
+      setSpeech(randomLine(c.mood_low));
+    }
+    if (state.mood<=0) {
+      clearInterval(moodInterval);
+      chatOptions.style.display='none';
+      setSpeech('不等了！我走了！垃圾店！');
+      setTimeout(() => {
+        if (!state.submitted) {
+          state.ratings.push(0);
+          state.customerIndex++;
+          updateUI();
+          state.customerIndex>=state.totalOrders ? endDay() : setTimeout(()=>nextCustomer(),1200);
+        }
+      },1500);
+    }
+  },200);
+}
+
+// ============ CHAT SYSTEM ============
+function showChatOptions() {
+  const c = state.currentCustomer;
+  if (!c || state.phase!=='playing' || state.submitted) return;
+  chatOptions.style.display = 'flex';
+  chatOptions.innerHTML = '';
+
+  const pool = c.chats.filter((_,i)=>!state.usedChatIndices.includes(i));
+  if (pool.length < 3) state.usedChatIndices = [];
+
+  const available = c.chats.filter((_,i)=>!state.usedChatIndices.includes(i));
+  const picked = [];
+  const indices = [];
+  const shuffled = [...Array(available.length).keys()].sort(()=>Math.random()-0.5);
+  for (let i=0; i<Math.min(3, available.length); i++) {
+    picked.push(available[shuffled[i]]);
+    indices.push(c.chats.indexOf(available[shuffled[i]]));
+  }
+
+  for (const opt of picked) {
+    const btn = document.createElement('button');
+    btn.className = 'chatBtn';
+    const tagClass = opt.tag==='nice'?'tag-nice':(opt.tag==='rude'?'tag-rude':'tag-neutral');
+    btn.innerHTML = `<span class="tag ${tagClass}">${opt.tag==='nice'?'好话':(opt.tag==='rude'?'狠话':'闲聊')}</span>${opt.text}`;
+    btn.onclick = () => {
+      const idx = c.chats.indexOf(opt);
+      if (!state.usedChatIndices.includes(idx)) state.usedChatIndices.push(idx);
+      chatOptions.style.display = 'none';
+      setSpeech(`«${opt.text}»`);
+      setTimeout(() => {
+        setSpeech(opt.reply);
+        setTimeout(() => showChatOptions(), 1200);
+      }, 500);
+    };
+    chatOptions.appendChild(btn);
+  }
+}
+
+// ============ GAME FLOW ============
+function nextCustomer() {
+  if (state.customerIndex>=state.totalOrders) { endDay(); return; }
+  state.currentCustomer = pickCustomer();
+  state.currentOrder = generateOrder();
+  state.burger = [];
+  state.phase = 'playing';
+  state.submitted = false;
+  state.usedChatIndices = [];
+  if (moodInterval) clearInterval(moodInterval);
+
+  customerSprite.textContent = state.currentCustomer.emoji;
+  customerName.textContent = state.currentCustomer.name;
+  customerTitle.textContent = state.currentCustomer.title;
+  renderOrder();
+  renderBurgerVisual();
+  validateBurger();
+  updateUI();
+  setSpeech(randomLine(state.currentCustomer.greet));
+  startMoodTimer();
+  updateMood();
+  setTimeout(() => showChatOptions(), 800);
+}
+
+// ============ SUBMIT ============
+submitBtn.onclick = () => submitOrder();
+function submitOrder() {
+  if (submitBtn.disabled || state.submitted) return;
+  state.submitted = true;
+  if (moodInterval) clearInterval(moodInterval);
+  chatOptions.style.display = 'none';
+
+  const c = state.currentCustomer;
+  const sp = [...state.burger].sort((a,b)=>LAYER_ORDER.indexOf(a)-LAYER_ORDER.indexOf(b));
+  const so = [...state.currentOrder].sort((a,b)=>LAYER_ORDER.indexOf(a)-LAYER_ORDER.indexOf(b));
+
+  let correct = sp.length===so.length;
+  if (correct) for (let i=0;i<sp.length;i++) if (sp[i]!==so[i]) { correct=false; break; }
+
+  const moodBonus = Math.floor(state.mood/20);
+  const revenue = correct ? (15+moodBonus+Math.floor(Math.random()*8)) : 3;
+  const rating = correct ? Math.min(5,1+moodBonus) : 0;
+
+  state.money += revenue;
+  state.dailyIncome += revenue;
+  if (correct) state.completedOrders++;
+  state.ratings.push(rating);
+
+  setSpeech(correct ? randomLine(c.correct) : randomLine(c.wrong));
+
+  setTimeout(() => {
+    setSpeech(`${correct?'✅ 完成！':'❌ 搞砸了...'} 收了 ${revenue} 元`);
+  }, 600);
+
+  setTimeout(() => {
+    state.customerIndex++;
+    updateUI();
+    state.customerIndex>=state.totalOrders ? endDay() : (setSpeech('下一位客人来了...'), setTimeout(()=>nextCustomer(),1200));
+  }, 2000);
+}
+
+// ============ DAY END ============
+function endDay() {
+  state.phase='end';
+  if (moodInterval) clearInterval(moodInterval);
+  chatOptions.style.display='none';
+  dayEnd.style.display='flex';
+  const avg = state.ratings.length ? state.ratings.reduce((a,b)=>a+b,0)/state.ratings.length : 0;
+  dayEndSub.textContent=`第 ${state.day} 天 · 打烊结算`;
+  deOrders.textContent=`${state.completedOrders}/${state.totalOrders}`;
+  deRating.textContent=avg.toFixed(1);
+  deIncome.textContent=`${state.dailyIncome} 元`;
+  deTotal.textContent=state.money;
+  const c = CUSTOMERS[Math.floor(Math.random()*CUSTOMERS.length)];
+  deEval.textContent = avg>=4 ? c.eval_high : (avg>=2 ? c.eval_mid : c.eval_low);
+}
+
+function nextDay() {
+  state.day++; state.customerIndex=0; state.dailyIncome=0;
+  state.completedOrders=0; state.ratings=[]; state.phase='playing';
+  dayEnd.style.display='none'; updateUI(); nextCustomer();
+}
+
+function updateUI() {
+  dayNum.textContent=state.day;
+  customerNum.textContent=state.customerIndex;
+  moneyDisplay.textContent=state.money;
+}
+
+function startGame() {
+  document.getElementById('startScreen').style.display='none';
+  state.phase='playing'; renderIngredients(); updateUI(); nextCustomer();
+}
+</script>
+</body>
+</html>

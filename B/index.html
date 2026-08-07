@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贝贝 · 简历</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@keyframes bgShift{0%,100%{background:#0a0a12}50%{background:#120a18}}
+body{animation:bgShift 8s ease-in-out infinite;font-family:'STKaiti','KaiTi','STSong','SimSun',serif;color:#e8d5b0;display:flex;justify-content:center;padding:4vh 2vw;min-height:100vh}
+.resume{max-width:820px;width:100%}
+
+@keyframes glowPulse{0%,100%{text-shadow:0 0 20px rgba(255,100,200,.3)}50%{text-shadow:0 0 50px rgba(255,100,200,.6)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes rainbow{0%{color:#f77}14%{color:#f97}28%{color:#ff7}42%{color:#7f7}57%{color:#7ff}71%{color:#77f}85%{color:#f7f}100%{color:#f77}}
+
+.header{text-align:center;padding:2.5vh 0 3vh;border-bottom:2px solid rgba(255,150,200,.15);margin-bottom:2.5vh;position:relative}
+.header::after{content:'✨💀✨';position:absolute;bottom:-1.2vh;left:50%;transform:translateX(-50%);font-size:1.2vw;letter-spacing:1vw;color:rgba(255,150,200,.3)}
+.header h1{font-size:4vw;letter-spacing:.2em;font-weight:400;background:linear-gradient(135deg,#ff6ec7,#ffd700,#ff6ec7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 30px rgba(255,100,200,.3));animation:float 3s ease-in-out infinite}
+.header .sub{font-size:1.3vw;color:#f9b;margin-top:.6vh;letter-spacing:.1em;animation:glowPulse 2.5s ease-in-out infinite}
+.header .tagline{font-size:.85vw;color:#a98;margin-top:1vh;max-width:40vw;margin-left:auto;margin-right:auto;line-height:1.9}
+.tagline .rainbow{animation:rainbow 4s linear infinite;font-weight:700}
+
+.section{margin-bottom:2.5vh}
+.section h2{font-size:1.3vw;color:#f9b;letter-spacing:.15em;border-left:3px solid #ff6ec7;padding-left:.8vw;margin-bottom:1.2vh;font-weight:400;text-shadow:0 0 20px rgba(255,100,200,.2)}
+
+.game-card{border:1px solid rgba(255,150,200,.15);padding:1.5vw;border-radius:8px;background:linear-gradient(135deg,rgba(255,100,200,.04),rgba(255,215,0,.04));margin-bottom:1.5vh;box-shadow:0 0 30px rgba(255,100,200,.05);transition:all .3s}
+.game-card:hover{box-shadow:0 0 40px rgba(255,100,200,.12);border-color:rgba(255,150,200,.3)}
+.game-card .name{font-size:1.2vw;background:linear-gradient(135deg,#ffd700,#f9b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em}
+.game-card .role{font-size:.75vw;color:#a87;margin-top:.3vh}
+.game-card .desc{font-size:.88vw;color:#ba9;margin-top:.8vh;line-height:2}
+.game-card .desc b{color:#ffd700;-webkit-text-fill-color:#ffd700}
+.game-card .highlight{border-top:1px solid rgba(255,150,200,.1);margin-top:1vh;padding-top:.8vh;font-size:.8vw;color:#a87;line-height:1.8}
+.game-card .highlight span{color:#f9b}
+
+.game-window{width:100%;aspect-ratio:16/9;border:1px solid rgba(255,150,200,.12);border-radius:6px;overflow:hidden;margin-top:1.5vh;background:#000;position:relative;box-shadow:0 0 20px rgba(255,100,200,.08)}
+.game-window iframe{width:100%;height:100%;border:none}
+.game-window .play-hint{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.7vw;color:rgba(255,150,200,.3);padding:.3vh;background:rgba(0,0,0,.7);letter-spacing:.1em}
+.game-window .fullscreen-btn{position:absolute;bottom:2vh;right:1vw;z-index:10;background:rgba(255,100,200,.15);border:1px solid rgba(255,150,200,.3);color:#f9b;font-size:.85vw;padding:.3vh .7vw;border-radius:4px;cursor:pointer;transition:all .3s;font-family:inherit;letter-spacing:.05em}
+.game-window .fullscreen-btn:hover{background:rgba(255,100,200,.3);border-color:#ff6ec7}
+.game-window.fullscreen{position:fixed;inset:0;z-index:999;aspect-ratio:auto;border:none;border-radius:0;margin:0}
+.game-window.fullscreen .fullscreen-btn{bottom:3vh;right:2vw;font-size:1.2vw;padding:.5vh 1.2vw}
+
+.star-rating{text-align:center;margin-top:2vh;padding:1.5vw;border-top:1px solid rgba(255,150,200,.1)}
+.star-rating .prompt{font-size:.85vw;color:#a87;margin-bottom:.8vh}
+.star-rating .stars{display:flex;justify-content:center;gap:.4vw;font-size:2vw;cursor:pointer;direction:rtl}
+.star-rating .stars span{color:rgba(255,200,100,.15);transition:all .2s}
+.star-rating .stars span:hover,.star-rating .stars span:hover~span{color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.4)}
+.star-rating .stars span.active,.star-rating .stars span.active~span{color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.4)}
+.star-rating .result{font-size:.75vw;color:#a87;margin-top:.6vh;min-height:1.2em}
+
+.skill-cloud{display:flex;flex-wrap:wrap;gap:.6vw}
+.skill-cloud .tag{display:inline-block;padding:.4vh .8vw;font-size:.75vw;border-radius:20px;border:1px solid rgba(255,150,200,.2);background:rgba(255,100,200,.06);color:#da9;transition:all .3s;animation:float 4s ease-in-out infinite}
+.skill-cloud .tag:nth-child(2){animation-delay:.3s}
+.skill-cloud .tag:nth-child(3){animation-delay:.6s}
+.skill-cloud .tag:nth-child(4){animation-delay:.9s}
+.skill-cloud .tag:nth-child(5){animation-delay:1.2s}
+.skill-cloud .tag:nth-child(6){animation-delay:1.5s}
+.skill-cloud .tag:nth-child(7){animation-delay:1.8s}
+.skill-cloud .tag:nth-child(8){animation-delay:2.1s}
+.skill-cloud .tag:hover{border-color:#ff6ec7;background:rgba(255,100,200,.12);color:#f9b;transform:scale(1.1)}
+
+.quote-box{margin-top:.5vh;padding:1.2vw 1.5vw;border-left:3px solid #ff6ec7;background:rgba(255,100,200,.04);border-radius:0 6px 6px 0}
+.quote-box .q{font-size:.88vw;color:#ba9;line-height:2.2}
+.quote-box .q .highlight{color:#ffd700;-webkit-text-fill-color:#ffd700;font-weight:700}
+
+.footer{text-align:center;padding:2vh 0;font-size:.85vw;color:#a87;border-top:1px solid rgba(255,150,200,.1);margin-top:1vh}
+.footer .wink{animation:rainbow 3s linear infinite}
+
+@media(max-width:600px){
+  .header h1{font-size:9vw}
+  .header .sub{font-size:4vw}
+  .header .tagline{font-size:3.5vw;max-width:90vw}
+  .header::after{font-size:3vw}
+  .section h2{font-size:4.5vw}
+  .game-card .name{font-size:5vw}
+  .game-card .desc,.game-card .highlight,.quote-box .q,.footer{font-size:3.2vw}
+  .game-card{padding:4vw}
+  .game-window .play-hint{font-size:2.5vw}
+  .skill-cloud .tag{font-size:3vw;padding:.6vh 2vw}
+}
+</style>
+</head>
+<body>
+<div class="resume">
+
+<div class="header">
+  <h1>👻 贝 贝</h1>
+  <div class="sub">💀 资深搞笑游戏制作者 · 地狱笑话学博士</div>
+  <div class="tagline">
+    每天蹲各大游戏博主的评论区偷灵感，从玩家笑声里反推设计逻辑。<br>
+    擅长用 <span class="rainbow">离谱设定 × 阴间幽默 × 人间温情</span> 做出<br>
+    "笑着笑着就沉默了，沉默完又开始笑" 的神金游戏 🃏
+  </div>
+</div>
+
+<div class="section">
+  <h2>🎮 项目经验</h2>
+
+  <div class="game-card">
+    <div class="name">☯️ 阴间规划局</div>
+    <div class="role">制作人 · 主程 · 文案 · 2026</div>
+    <div class="desc">
+      死后世界模拟经营游戏。你是一名 <b>阴间判官</b>，在奈何桥边接待各路鬼魂——<br>
+      听它们讲 <b>离谱死法</b>（吃蘑菇以为自己是珍珠奶茶跳河的 / 唱<em>死了都要爱</em>飙高音脑溢血的），<br>
+      问出它们的 <b>遗愿</b>，用法器（糯米 / 玉佩 / 桃木剑）逼出真话，<br>
+      赚 <b>冥币</b> 帮它们了却心事，再送它们去该去的地方。<br><br>
+      恐怖又搞笑，休闲又轻松，就像在阴间开了一家 <b>亡灵感化中心 ☕</b>
+    </div>
+    <div class="highlight">
+      <span>🎮 玩法：</span>聊天 × 审判 × 遗愿管理 · <span>🔥 特色：</span>20+鬼魂各有趣味对白 + 熟人/仇人随机出现 · <span>💰 核心：</span>赚冥币 → 用神力帮鬼了却心事 → 解锁称号+火眼金睛
+    </div>
+    <div class="game-window" id="game-window">
+      <iframe src="../阴间规划局/index.html?embed=1" id="game-frame" loading="lazy" allow="autoplay"></iframe>
+      <div class="play-hint" id="play-hint">💀 点击"开始接待"进入游戏</div>
+      <button class="fullscreen-btn" id="fs-btn">⛶ 放大</button>
+    </div>
+  </div>
+
+  <div class="quote-box">
+    <div class="q">
+      "好游戏不是教你怎么玩，是让你 <span class="highlight">想玩下去</span>。"<br>
+      我做游戏前只问自己一个问题——<br>
+      <span style="color:#887">"如果我在抖音刷到有人玩这个，我会不会停下来看完？"</span><br>
+      答案必须是 <span class="highlight">会</span>，不然就回炉重造 🔥
+    </div>
+  </div>
+
+  <div class="quote-box" style="margin-top:1vh">
+    <div class="q">
+      🎯 赛道：<span class="highlight">地狱笑话 × 人间温情</span><br>
+      把离谱的设定做出真实的情感，让玩家笑着笑着就哭了，哭着哭着又笑了。<br>
+      相信我，阴间题材只是外壳，<span class="highlight">治愈</span> 才是我的核心技能 🫶
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>🛠️ 技能树（持续点歪中）</h2>
+  <div class="skill-cloud">
+    <span class="tag">🎲 游戏设计</span>
+    <span class="tag">📝 剧本 / 对白</span>
+    <span class="tag">🖌️ Three.js 3D</span>
+    <span class="tag">🎨 UI / UX</span>
+    <span class="tag">🐍 Python / JS</span>
+    <span class="tag">🤖 AI 协作</span>
+    <span class="tag">😂 地狱笑话学</span>
+    <span class="tag">💅 Meangirl 审美</span>
+  </div>
+</div>
+
+<div class="section">
+  <h2>📬 联系方式</h2>
+  <div class="quote-box" style="border-left-color:#ffd700">
+    <div class="q">
+      在阴间规划局大堂喊一声 <span class="highlight">"贝贝！"</span> —— 她会出现的 👻<br>
+      或者随便找一个鬼魂带话，它们嘴都挺碎的，肯定能传到 🗣️
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span class="wink">⚰️ 已死 · 但游戏还在更新 ⚰️</span>
+</div>
+
+<div class="star-rating">
+  <div class="prompt">💀 给 <b>贝贝</b> 的游戏打个分吧</div>
+  <div class="stars" id="stars">
+    <span data-v="5">★</span>
+    <span data-v="4">★</span>
+    <span data-v="3">★</span>
+    <span data-v="2">★</span>
+    <span data-v="1">★</span>
+  </div>
+  <div class="result" id="star-result"></div>
+</div>
+
+<script>
+document.getElementById('fs-btn').addEventListener('click',()=>{
+  const w=document.getElementById('game-window');
+  w.classList.toggle('fullscreen');
+  document.getElementById('fs-btn').textContent=w.classList.contains('fullscreen')?'✕ 缩小':'⛶ 放大';
+});
+document.getElementById('stars').addEventListener('click',e=>{
+  const v=e.target.dataset.v;
+  if(!v)return;
+  document.querySelectorAll('#stars span').forEach(s=>s.classList.toggle('active',s.dataset.v<=v));
+  const msgs=['💀 地狱级难绷','🙈 笑死 负责吗','👍 挺有意思','🔥 牛逼 大作了','👻 贝贝你是我的神'];
+  document.getElementById('star-result').textContent=msgs[v-1];
+});
+window.addEventListener('message',e=>{
+  if(e.data?.type==='gameEnd'){
+    document.getElementById('play-hint').textContent='💀 本轮结束 · 滚动下去打分吧';
+  }
+  if(e.data?.type==='exitGame'){
+    document.getElementById('game-window').classList.remove('fullscreen');
+    document.getElementById('fs-btn').textContent='⛶ 放大';
+  }
+});
+</script>
+
+</div>
+</body>
+</html>
